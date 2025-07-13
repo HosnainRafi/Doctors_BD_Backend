@@ -1,0 +1,36 @@
+import mongoose from "mongoose";
+import { z } from "zod";
+
+const phoneRegex = /^(?:\+88|01)[0-9]{9,10}$/;
+
+export const createHospitalValidation = z.object({
+  body: z.object({
+    name: z.string().min(3),
+    address: z.string().min(10),
+    district: z.string().transform((val) => new mongoose.Types.ObjectId(val)),
+    contactNumbers: z.array(z.string().regex(phoneRegex)).min(1),
+    googleMapUrl: z.string().url().optional(),
+    facilities: z.array(z.string()).optional(),
+    isActive: z.boolean().optional(),
+  }),
+});
+
+export const updateHospitalValidation = z.object({
+  body: z.object({
+    name: z.string().min(3).optional(),
+    address: z.string().min(10).optional(),
+    district: z
+      .string()
+      .regex(/^[0-9a-fA-F]{24}$/)
+      .optional(),
+    contactNumbers: z.array(z.string().regex(phoneRegex)).min(1).optional(),
+    googleMapUrl: z.string().url().optional(),
+    facilities: z.array(z.string()).optional(),
+    isActive: z.boolean().optional(),
+  }),
+});
+
+export const HospitalValidations = {
+  createHospitalValidation,
+  updateHospitalValidation,
+};
