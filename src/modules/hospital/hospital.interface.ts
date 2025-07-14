@@ -1,11 +1,4 @@
-import { Types } from "mongoose";
-
-export type IPaginationOptions = {
-  page?: number;
-  limit?: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-};
+import { Types, Document } from "mongoose";
 
 export interface IHospital {
   name: string;
@@ -14,7 +7,7 @@ export interface IHospital {
   contactNumbers: string[];
   googleMapUrl?: string;
   facilities?: string[];
-  isActive?: boolean;
+  isDeleted?: boolean;
   latitude?: number;
   longitude?: number;
   geocodedAddressDetails?: {
@@ -32,3 +25,10 @@ export interface HospitalModel extends Document, IHospital {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type IPaginationOptions = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+};

@@ -1,5 +1,4 @@
-// hospital.constants.ts
-export const hospitalFilterableFields = ["searchTerm", "isActive"] as const;
+export const hospitalFilterableFields = ["searchTerm"] as const;
 export const hospitalPaginationFields = [
   "limit",
   "page",
@@ -7,7 +6,6 @@ export const hospitalPaginationFields = [
   "sortOrder",
 ] as const;
 
-// Extract literal types
 export type HospitalFilterableFields =
   (typeof hospitalFilterableFields)[number];
 export type HospitalPaginationFields =

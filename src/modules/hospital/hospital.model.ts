@@ -3,21 +3,9 @@ import { HospitalModel } from "./hospital.interface";
 
 const hospitalSchema = new Schema<HospitalModel>(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-      index: true,
-    },
-    address: {
-      type: String,
-      required: true,
-    },
-    district: {
-      type: Schema.Types.ObjectId,
-      ref: "District",
-      required: true,
-    },
+    name: { type: String, required: true, trim: true, index: true },
+    address: { type: String, required: true },
+    district: { type: Schema.Types.ObjectId, ref: "District", required: true },
     contactNumbers: {
       type: [String],
       required: true,
@@ -30,6 +18,7 @@ const hospitalSchema = new Schema<HospitalModel>(
     facilities: [String],
     latitude: Number,
     longitude: Number,
+    isDeleted: { type: Boolean, default: false },
     geocodedAddressDetails: {
       house_number: String,
       road: String,
@@ -38,10 +27,6 @@ const hospitalSchema = new Schema<HospitalModel>(
       state: String,
       country: String,
       country_code: String,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
     },
   },
   { timestamps: true, versionKey: false }

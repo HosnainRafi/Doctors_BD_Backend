@@ -1,17 +1,16 @@
-// hospital.controller.ts
 import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
-import { HospitalValidations } from "./hospital.validation";
 import { HospitalService } from "./hospital.service";
+import { HospitalValidations } from "./hospital.validation";
+import { pick } from "../../shared/pick";
 import {
-  HospitalFilterableFields,
   hospitalFilterableFields,
   hospitalPaginationFields,
-  HospitalPaginationFields,
+  HospitalFilterableFields,
 } from "./hospital.constants";
-import { pick } from "../../shared/pick";
 
+// Create hospital
 const createHospital = catchAsync(async (req: Request, res: Response) => {
   const { body } = HospitalValidations.createHospitalValidation.parse(req);
   const result = await HospitalService.createHospital(body);
@@ -24,19 +23,18 @@ const createHospital = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Get paginated list of hospitals
 const getHospitals = catchAsync(async (req: Request, res: Response) => {
-  // Parse and validate query parameters first
   const parsedQuery = HospitalValidations.hospitalQueryValidation.parse(
     req.query
   );
 
-  // Cast to the correct types when picking
+  // Safely convert readonly array to mutable one
   const filters = pick(
     parsedQuery,
-    hospitalFilterableFields as unknown as (keyof typeof parsedQuery)[]
+    Array.from(hospitalFilterableFields) as (keyof typeof parsedQuery)[]
   );
 
-  // Fix: Explicitly type the options with proper field types
   const options = pick(parsedQuery, hospitalPaginationFields) as {
     page?: number;
     limit?: number;
@@ -46,7 +44,7 @@ const getHospitals = catchAsync(async (req: Request, res: Response) => {
 
   const result = await HospitalService.getHospitals(
     filters as Record<HospitalFilterableFields, unknown>,
-    options // Now properly typed to match IPaginationOptions
+    options
   );
 
   sendResponse(res, {
@@ -56,9 +54,10 @@ const getHospitals = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+// Get a single hospital by ID
 const getHospital = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await HospitalService.getHospital(id);
+  const result = await HospitalService.getHospital(req.params.id);
 
   sendResponse(res, {
     statusCode: 200,
@@ -68,10 +67,10 @@ const getHospital = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Update hospital by ID
 const updateHospital = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
   const { body } = HospitalValidations.updateHospitalValidation.parse(req);
-  const result = await HospitalService.updateHospital(id, body);
+  const result = await HospitalService.updateHospital(req.params.id, body);
 
   sendResponse(res, {
     statusCode: 200,
@@ -81,9 +80,9 @@ const updateHospital = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Soft delete hospital by ID
 const deleteHospital = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await HospitalService.deleteHospital(id);
+  const result = await HospitalService.deleteHospital(req.params.id);
 
   sendResponse(res, {
     statusCode: 200,

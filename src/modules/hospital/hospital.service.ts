@@ -1,10 +1,10 @@
 import { Hospital } from "./hospital.model";
 import {
   IHospital,
-  HospitalModel,
   IPaginationOptions,
+  HospitalModel,
 } from "./hospital.interface";
-import { FilterQuery, Types } from "mongoose";
+import { FilterQuery } from "mongoose";
 import { calculatePagination } from "../../shared/calculatePagination";
 
 export const HospitalService = {
@@ -19,7 +19,7 @@ export const HospitalService = {
     const { limit, page, skip } = calculatePagination(options);
     const { searchTerm, ...filterData } = filters;
 
-    const andConditions = [];
+    const andConditions: any[] = [{ isDeleted: false }]; // Default filter
 
     if (searchTerm) {
       andConditions.push({
@@ -30,20 +30,18 @@ export const HospitalService = {
       });
     }
 
-    if (Object.keys(filterData).length > 0) {
-      andConditions.push({
-        $and: Object.entries(filterData).map(([field, value]) => ({
-          [field]: value,
-        })),
-      });
-    }
+    Object.entries(filterData).forEach(([field, value]) => {
+      andConditions.push({ [field]: value });
+    });
 
     const whereCondition =
       andConditions.length > 0 ? { $and: andConditions } : {};
-
+    console.log(
+      "Final whereCondition:",
+      JSON.stringify(whereCondition, null, 2)
+    );
     const [hospitals, total] = await Promise.all([
       Hospital.find(whereCondition)
-        .populate("district", "name slug")
         .skip(skip)
         .limit(limit)
         .sort(
@@ -55,17 +53,13 @@ export const HospitalService = {
     ]);
 
     return {
-      meta: {
-        page,
-        limit,
-        total,
-      },
+      meta: { page, limit, total },
       data: hospitals,
     };
   },
 
   async getHospital(id: string): Promise<HospitalModel | null> {
-    return Hospital.findById(id).populate("district", "name slug");
+    return Hospital.findOne({ _id: id, isDeleted: false });
   },
 
   async updateHospital(
@@ -76,6 +70,6 @@ export const HospitalService = {
   },
 
   async deleteHospital(id: string): Promise<HospitalModel | null> {
-    return Hospital.findByIdAndDelete(id);
+    return Hospital.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
   },
 };
