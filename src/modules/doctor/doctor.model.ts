@@ -32,7 +32,21 @@ const chamberSchema = new Schema<TChamber>({
 const doctorSchema = new Schema<IDoctorDocument>(
   {
     id: { type: String, required: true, unique: true },
-    // ... other fields remain the same
+    district: { type: String, required: true },
+    name: { type: String, required: true },
+    photo: { type: String, required: true },
+    degree: { type: String, required: true },
+    specialty: { type: String, required: true },
+    workplace: { type: String, required: true },
+    hospital_name: { type: String, required: true },
+    hospital_link: { type: String, required: true },
+    rating: { type: String, required: true },
+    chambers: [{ type: chamberSchema, required: true }],
+    profile_url: { type: String, required: true },
+    designation: { type: String, required: true },
+    source_hospital: { type: String, required: true },
+    specialtyList: { type: [String], required: true },
+    specialtyCategories: { type: [String], required: true },
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },
@@ -42,8 +56,8 @@ const doctorSchema = new Schema<IDoctorDocument>(
     toJSON: {
       virtuals: true,
       transform: function (doc, ret) {
-        ret._id = ret.id;
-        delete ret.id;
+        ret._id = doc._id;
+        delete ret._id;
         return ret;
       },
     },
@@ -51,7 +65,7 @@ const doctorSchema = new Schema<IDoctorDocument>(
 );
 
 // Indexes
-doctorSchema.index({ id: 1, isDeleted: 1 });
+doctorSchema.index({ _id: 1, isDeleted: 1 });
 doctorSchema.index({ name: "text", specialty: "text" });
 doctorSchema.index({ district: 1, isDeleted: 1 });
 

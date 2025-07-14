@@ -1,10 +1,15 @@
 // src/modules/doctor/doctor.service.ts
 import { Doctor } from "./doctor.model";
-import { IDoctorDocument, TDoctor } from "./doctor.interface";
+import {
+  IDoctorDocument,
+  IPaginationResponse,
+  PaginationOptions,
+  TDoctor,
+} from "./doctor.interface";
 import { Query } from "express-serve-static-core";
 import mongoose from "mongoose";
 import { DoctorSpecialization } from "../doctor-specialization/doctorSpecialization.model";
-import { Types } from "mongoose";
+// adjust path if needed
 
 export const DoctorServices = {
   // Create Doctor

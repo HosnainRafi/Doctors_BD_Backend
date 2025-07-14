@@ -7,15 +7,12 @@ import { DoctorSpecialization } from "../doctor-specialization/doctorSpecializat
 import { doctorValidations } from "./doctor.validation";
 import { TDoctor } from "./doctor.interface";
 import { Query } from "express-serve-static-core";
+import mongoose from "mongoose";
 
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
-  // 1. Validate AND extract in one step
-  const { body: doctorData } =
-    doctorValidations.createDoctorValidation.parse(req);
-
-  // 2. Pass the inner data to service
-  const result = await DoctorServices.createDoctor(doctorData);
-
+  const doctorData = doctorValidations.createDoctorValidation.parse(req.body);
+  const result = await DoctorServices.createDoctor(doctorData.body);
+  console.log(result);
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
@@ -38,7 +35,7 @@ const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
 const getSingleDoctor = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await DoctorServices.getSingleDoctor(id);
-
+  console.log(result);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -153,6 +150,8 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
       errors,
     },
   });
+
+  // NEW FUNCTION (properly placed at the root level)
 });
 
 export const doctorController = {

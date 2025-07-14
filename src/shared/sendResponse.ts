@@ -10,7 +10,7 @@ type IApiResponse<T> = {
   meta?: {
     page: number;
     limit: number;
-    total: number;
+    total?: number;
   };
 };
 

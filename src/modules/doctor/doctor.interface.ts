@@ -22,6 +22,24 @@ export type TChamber = {
   visiting_hours: TVisitingHours;
   url: string;
 };
+export type PaginationOptions = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+};
+
+export interface IPaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface IPaginationResponse<T> {
+  data: T[];
+  meta: IPaginationMeta;
+}
 
 // Main doctor type (for input/API)
 export type TDoctor = {

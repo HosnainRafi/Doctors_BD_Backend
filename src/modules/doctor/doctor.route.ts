@@ -7,10 +7,6 @@ import multer from "multer";
 
 const upload = multer();
 const router = express.Router();
-router.post("/debug", (req, res) => {
-  console.log("Raw body:", req.body);
-  res.send(req.body);
-});
 
 router.post(
   "/",
