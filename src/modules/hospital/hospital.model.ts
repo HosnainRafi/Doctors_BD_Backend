@@ -28,6 +28,17 @@ const hospitalSchema = new Schema<HospitalModel>(
     },
     googleMapUrl: String,
     facilities: [String],
+    latitude: Number,
+    longitude: Number,
+    geocodedAddressDetails: {
+      house_number: String,
+      road: String,
+      city: String,
+      county: String,
+      state: String,
+      country: String,
+      country_code: String,
+    },
     isActive: {
       type: Boolean,
       default: true,

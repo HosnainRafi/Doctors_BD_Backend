@@ -1,4 +1,11 @@
-import { Document, Types } from "mongoose";
+import { Types } from "mongoose";
+
+export type IPaginationOptions = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+};
 
 export interface IHospital {
   name: string;
@@ -8,6 +15,17 @@ export interface IHospital {
   googleMapUrl?: string;
   facilities?: string[];
   isActive?: boolean;
+  latitude?: number;
+  longitude?: number;
+  geocodedAddressDetails?: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+    country_code?: string;
+  };
 }
 
 export interface HospitalModel extends Document, IHospital {

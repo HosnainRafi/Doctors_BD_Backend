@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "name": "Barisal",
+    "slug": "barisal",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Bogura",
+    "slug": "bogura",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Chittagong",
+    "slug": "chittagong",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "name": "Dhaka",
+    "slug": "dhaka",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 5,
+    "name": "Khulna",
+    "slug": "khulna",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 6,
+    "name": "Kustia",
+    "slug": "kustia",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 7,
+    "name": "Mymensingh",
+    "slug": "mymensingh",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 8,
+    "name": "Narayanganj",
+    "slug": "narayanganj",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 9,
+    "name": "Pabna",
+    "slug": "pabna",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 10,
+    "name": "Rajshahi",
+    "slug": "rajshahi",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 11,
+    "name": "Rangpur",
+    "slug": "rangpur",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  },
+  {
+    "id": 12,
+    "name": "Sylhet",
+    "slug": "sylhet",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00Z",
+    "updatedAt": "2025-01-01T00:00:00Z"
+  }
+]

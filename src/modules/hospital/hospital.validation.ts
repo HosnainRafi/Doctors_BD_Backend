@@ -1,3 +1,4 @@
+// hospital.validation.ts
 import mongoose from "mongoose";
 import { z } from "zod";
 
@@ -21,7 +22,7 @@ export const updateHospitalValidation = z.object({
     address: z.string().min(10).optional(),
     district: z
       .string()
-      .regex(/^[0-9a-fA-F]{24}$/)
+      .transform((val) => (val ? new mongoose.Types.ObjectId(val) : undefined))
       .optional(),
     contactNumbers: z.array(z.string().regex(phoneRegex)).min(1).optional(),
     googleMapUrl: z.string().url().optional(),
@@ -30,7 +31,27 @@ export const updateHospitalValidation = z.object({
   }),
 });
 
+// Add this new schema for query parameters
+export const hospitalQueryValidation = z.object({
+  searchTerm: z.string().optional(),
+  isActive: z
+    .string()
+    .optional()
+    .transform((val) => val === "true"),
+  limit: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val) : undefined)),
+  page: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val) : undefined)),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
+});
+
 export const HospitalValidations = {
   createHospitalValidation,
   updateHospitalValidation,
+  hospitalQueryValidation,
 };

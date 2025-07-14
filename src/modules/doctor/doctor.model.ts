@@ -64,9 +64,33 @@ const doctorSchema = new Schema<IDoctorDocument>(
   }
 );
 
-// Indexes
-doctorSchema.index({ _id: 1, isDeleted: 1 });
-doctorSchema.index({ name: "text", specialty: "text" });
-doctorSchema.index({ district: 1, isDeleted: 1 });
+doctorSchema.index(
+  {
+    name: "text",
+    specialty: "text",
+    "chambers.hospital_name": "text",
+    "chambers.address": "text",
+    specialtyList: "text",
+    specialtyCategories: "text",
+  },
+  {
+    weights: {
+      name: 5,
+      "chambers.hospital_name": 4,
+      specialty: 3,
+      specialtyList: 2,
+      specialtyCategories: 1,
+    },
+    name: "doctor_text_search",
+  }
+);
+
+// Individual indexes for frequently queried fields
+doctorSchema.index({ district: 1 });
+doctorSchema.index({ "chambers.visiting_hours.visiting_days": 1 });
+doctorSchema.index({ "chambers.visiting_hours.time_slots.original_time": 1 });
+doctorSchema.index({ "chambers.visiting_hours.visiting_hours": 1 });
+doctorSchema.index({ specialtyList: 1 });
+doctorSchema.index({ specialtyCategories: 1 });
 
 export const Doctor = model<IDoctorDocument>("Doctor", doctorSchema);

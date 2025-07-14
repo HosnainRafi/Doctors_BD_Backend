@@ -22,13 +22,14 @@ const createDoctor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
-  const result = await DoctorServices.getAllDoctors(req.query as Query);
+  const result = await DoctorServices.getAllDoctors(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Doctors retrieved successfully",
-    data: result,
+    data: result.data,
+    meta: result.meta,
   });
 });
 

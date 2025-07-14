@@ -10,7 +10,7 @@ router.post(
   validateRequest(DistrictValidations.createDistrictValidation),
   DistrictController.createDistrict
 );
-
+router.get("/", DistrictController.getAllDistrict);
 // Other routes...
 
 export const DistrictRoutes = router;
