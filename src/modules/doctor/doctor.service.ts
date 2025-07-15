@@ -261,33 +261,19 @@ export const DoctorServices = {
           messages: [
             {
               role: "system",
-              content: `You are a medical assistant AI. 
-Extract key medical search criteria from user queries and respond ONLY with valid JSON. 
-Do NOT include any explanation or commentary before or after the JSON.
-
-Return the following fields:
-- condition
-- district
-- specialty
-- timePreferences (array: morning, afternoon, evening, weekday, weekend)
-- urgency (true/false)
-- hospitalPreference
-- relatedConditions (array)
-
-Example:
-Input: "I have back pain and want a doctor in Narayanganj available on weekdays"
-Output:
-{
-  "condition": "back pain",
-  "district": "Narayanganj",
-  "specialty": "Orthopedist",
-  "timePreferences": ["weekday"],
-  "urgency": false,
-  "hospitalPreference": null,
-  "relatedConditions": ["spinal issues", "muscle strain"]
-}
-
-⚠️ IMPORTANT: Respond only with valid JSON, no other text.`,
+              content: `You are a medical assistant AI. Extract key medical search criteria from user queries and respond ONLY with valid JSON. 
+  Include date-related information when users mention "today", "tomorrow" or specific days.
+  
+  Return the following fields:
+  - condition
+  - district
+  - specialty
+  - timePreferences (array: morning, afternoon, evening, weekday, weekend)
+  - dateRequirement (enum: null, "today", "tomorrow", "specific_date")
+  - specificDate (string in YYYY-MM-DD format if applicable)
+  - urgency (true/false)
+  - hospitalPreference
+  - relatedConditions (array)`,
             },
 
             { role: "user", content: prompt },
@@ -340,6 +326,32 @@ Output:
   buildMongoQuery(criteria: any) {
     const query: any = { isDeleted: false };
     const orConditions = [];
+
+    // Add at the beginning of buildMongoQuery:
+    const today = new Date();
+    let targetDay = null;
+
+    if (criteria.dateRequirement === "today") {
+      targetDay = today.toLocaleString("en-US", { weekday: "long" });
+    } else if (criteria.dateRequirement === "tomorrow") {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      targetDay = tomorrow.toLocaleString("en-US", { weekday: "long" });
+    } else if (criteria.specificDate) {
+      const specificDate = new Date(criteria.specificDate);
+      targetDay = specificDate.toLocaleString("en-US", { weekday: "long" });
+    }
+
+    if (targetDay) {
+      query.$and = (query.$and || []).concat({
+        "chambers.visiting_hours.visiting_days": targetDay,
+      });
+
+      // Check if the chamber is not listed in closed_days
+      query.$and.push({
+        "chambers.visiting_hours.closed_days": { $ne: targetDay },
+      });
+    }
 
     // 🌍 District filter
     if (criteria.district) {
@@ -463,6 +475,22 @@ Output:
       if (timeConditions.length > 0) {
         query.$and = (query.$and || []).concat({ $or: timeConditions });
       }
+
+      if (
+        query.$and &&
+        query.$and.some(
+          (cond: any) => cond["chambers.visiting_hours.visiting_days"]
+        )
+      ) {
+        // If we're searching for a specific day, also match the time slots
+        query.$and.push({
+          "chambers.visiting_hours.time_slots": {
+            $elemMatch: {
+              $or: timeSlotsConditions,
+            },
+          },
+        });
+      }
     }
 
     // 🚨 Urgency filter
@@ -485,10 +513,31 @@ Output:
 
     // 🏥 Hospital filter
     if (criteria.hospitalPreference) {
-      query["chambers.hospital_name"] = {
-        $regex: criteria.hospitalPreference,
-        $options: "i",
+      const hospitalQuery = {
+        $or: [
+          {
+            "chambers.hospital_name": {
+              $regex: `\\b${criteria.hospitalPreference}\\b`,
+              $options: "i",
+            },
+          },
+          {
+            workplace: {
+              $regex: `\\b${criteria.hospitalPreference}\\b`,
+              $options: "i",
+            },
+          },
+          {
+            source_hospital: {
+              $regex: `\\b${criteria.hospitalPreference}\\b`,
+              $options: "i",
+            },
+          },
+        ],
       };
+
+      // Add to main query
+      query.$and = (query.$and || []).concat(hospitalQuery);
     }
 
     return query;
