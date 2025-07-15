@@ -2,18 +2,26 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/**/*.js",
-      "use": "@vercel/node"
+      "src": "dist/server.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "includeFiles": ["dist/**/*.js", "dist/**/*.json", ".env"]
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/dist/index.js"
+      "src": "/api/v1/(.*)",
+      "dest": "/dist/server.js",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.js"
+      "dest": "/dist/server.js"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
