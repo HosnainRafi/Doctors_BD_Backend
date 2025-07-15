@@ -250,8 +250,7 @@ export const DoctorServices = {
   },
 
   async analyzePromptWithOpenRouter(prompt: string): Promise<any> {
-    const OPENROUTER_API_KEY =
-      "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";
+    const OPENROUTER_API_KEY = config.openUI_url;
     const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
     try {
