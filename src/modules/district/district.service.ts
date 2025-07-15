@@ -13,5 +13,4 @@ export const DistrictService = {
   getAllDistricts: async (filters: FilterQuery<IDistrict> = {}) => {
     return await District.find(filters);
   },
-  // ... rest of your service methods
 };

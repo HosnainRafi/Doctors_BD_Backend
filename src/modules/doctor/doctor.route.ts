@@ -25,5 +25,6 @@ router.patch(
 router.delete("/:id", doctorController.deleteDoctor);
 router.patch("/:id/restore", doctorController.restoreDoctor);
 router.post("/import", upload.single("file"), doctorController.importDoctors);
+router.post("/ai-search", doctorController.aiDoctorSearch);
 
 export const DoctorRoutes = router;

@@ -12,7 +12,7 @@ import mongoose from "mongoose";
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
   const doctorData = doctorValidations.createDoctorValidation.parse(req.body);
   const result = await DoctorServices.createDoctor(doctorData.body);
-  console.log(result);
+
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
@@ -36,7 +36,7 @@ const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
 const getSingleDoctor = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const result = await DoctorServices.getSingleDoctor(id);
-  console.log(result);
+
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -155,6 +155,62 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
   // NEW FUNCTION (properly placed at the root level)
 });
 
+const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
+  const { prompt } = req.body;
+
+  if (!prompt) {
+    throw new Error("Search prompt is required");
+  }
+
+  try {
+    console.log("Processing AI search for prompt:", prompt);
+    const result = await DoctorServices.aiSearchDoctors(prompt);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "AI search results retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  } catch (error: unknown) {
+    let errorMessage = "AI search failed";
+    let errorDetails: any = undefined;
+
+    if (error instanceof Error) {
+      errorMessage = error.message.includes("Failed to analyze")
+        ? "The AI service is currently unavailable. Please try a simpler search."
+        : error.message;
+
+      if (process.env.NODE_ENV === "development") {
+        errorDetails = {
+          message: error.message,
+          stack: error.stack,
+          name: error.name,
+        };
+      }
+    }
+
+    // Type-safe error response
+    const errorResponse: {
+      statusCode: number;
+      success: boolean;
+      message: string;
+      error?: any;
+    } = {
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: errorMessage,
+    };
+
+    if (errorDetails) {
+      errorResponse.error = errorDetails;
+    }
+
+    res.status(errorResponse.statusCode).json(errorResponse);
+  }
+});
+
 export const doctorController = {
   createDoctor,
   getAllDoctors,
@@ -165,4 +221,5 @@ export const doctorController = {
   restoreDoctor,
   importDoctors,
   getDeletedDoctors,
+  aiDoctorSearch,
 };
