@@ -258,7 +258,9 @@ export const DoctorServices = {
 
     return {
       data: doctors,
-      meta: {},
+      meta: {
+        count: doctors.length,
+      },
       searchCriteria,
     };
   },
@@ -314,34 +316,23 @@ export const DoctorServices = {
   },
 
   extractSearchCriteria(aiResponse: any) {
-    const criteria: any = {};
-
-    // Map AI response to our search criteria
-    if (aiResponse.condition) {
-      criteria.condition = aiResponse.condition;
-    }
-
-    if (aiResponse.district) {
-      criteria.district = aiResponse.district.toLowerCase();
-    }
-
-    if (aiResponse.specialty) {
-      criteria.specialty = aiResponse.specialty;
-    }
-
-    // Handle time preferences
-    if (aiResponse.timePreferences) {
-      criteria.timePreferences = aiResponse.timePreferences;
-    }
-
-    return criteria;
+    return {
+      condition: aiResponse.condition || null,
+      specialty: aiResponse.specialty || null,
+      relatedConditions: aiResponse.relatedConditions || [],
+      district: aiResponse.district || null,
+      timePreferences: aiResponse.timePreferences || [],
+      hospitalPreference: aiResponse.hospitalPreference || null,
+      dateRequirement: aiResponse.dateRequirement || null,
+      specificDate: aiResponse.specificDate || null,
+      urgency: aiResponse.urgency || false,
+    };
   },
 
   buildMongoQuery(criteria: any) {
     const query: any = { isDeleted: false };
     const orConditions = [];
 
-    // Add at the beginning of buildMongoQuery:
     const today = new Date();
     let targetDay = null;
 
@@ -352,206 +343,248 @@ export const DoctorServices = {
       tomorrow.setDate(today.getDate() + 1);
       targetDay = tomorrow.toLocaleString("en-US", { weekday: "long" });
     } else if (criteria.specificDate) {
-      const specificDate = new Date(criteria.specificDate);
-      targetDay = specificDate.toLocaleString("en-US", { weekday: "long" });
+      const date = new Date(criteria.specificDate);
+      targetDay = date.toLocaleString("en-US", { weekday: "long" });
     }
 
     if (targetDay) {
-      query.$and = (query.$and || []).concat({
-        "chambers.visiting_hours.visiting_days": targetDay,
-      });
-
-      // Check if the chamber is not listed in closed_days
-      query.$and.push({
-        "chambers.visiting_hours.closed_days": { $ne: targetDay },
-      });
+      query.$and = (query.$and || []).concat([
+        { "chambers.visiting_hours.visiting_days": targetDay },
+        { "chambers.visiting_hours.closed_days": { $ne: targetDay } },
+      ]);
     }
 
-    // 🌍 District filter
     if (criteria.district) {
-      query.district = {
-        $regex: new RegExp(criteria.district, "i"),
-      };
+      query.district = { $regex: criteria.district, $options: "i" };
     }
 
-    // 🧠 Map condition to specialty (AI assistance + fallback dictionary)
     const conditionToSpecialtyMap: Record<string, string> = {
-      headache: "Neurology",
-      "back pain": "Orthopedics",
-      "leg pain": "Orthopedics",
-      "chest pain": "Cardiology",
-      cancer: "Oncology",
-      diabetes: "Endocrinology",
-      asthma: "Pulmonology",
-      "skin rash": "Dermatology",
-      pregnancy: "Gynecology",
-      "eye pain": "Ophthalmology",
-      // Add more mappings as needed
+      dentistry: "Dental Specialist",
+      dentist: "Dental Specialist",
+      teeth: "Dental Specialist",
+      tooth: "Dental Specialist",
+      gum: "Dental Specialist",
+      oral: "Dental Specialist",
+
+      // Pediatrics
+      child: "Child Specialist",
+      children: "Child Specialist",
+      kid: "Child Specialist",
+      kids: "Child Specialist",
+      baby: "Child Specialist",
+      newborn: "Child Specialist",
+      pediatric: "Child Specialist",
+      pediatrician: "Child Specialist",
+
+      // Neurology
+      brain: "Brain Specialist",
+      nerve: "Brain Specialist",
+      neurology: "Brain Specialist",
+      neuromedicine: "Brain Specialist",
+      spine: "Brain Specialist",
+      stroke: "Brain Specialist",
+
+      // Cardiology
+      heart: "Cardiology Specialist",
+      cardio: "Cardiology Specialist",
+      cardiovascular: "Cardiology Specialist",
+
+      // Orthopedics
+      bone: "Orthopedics Specialist",
+      joint: "Orthopedics Specialist",
+      orthopedic: "Orthopedics Specialist",
+      arthritis: "Orthopedics Specialist",
+      trauma: "Orthopedics Specialist",
+
+      // Gynecology
+      women: "Gynecology Specialist",
+      pregnancy: "Gynecology Specialist",
+      gynecologist: "Gynecology Specialist",
+      obstetrics: "Gynecology Specialist",
+      gynae: "Gynecology Specialist",
+      infertility: "Gynecology Specialist",
+
+      // ENT
+      ear: "ENT Specialist",
+      nose: "ENT Specialist",
+      throat: "ENT Specialist",
+      ent: "ENT Specialist",
+      sinus: "ENT Specialist",
+
+      // Ophthalmology
+      eye: "Eye Specialist",
+      vision: "Eye Specialist",
+
+      // Oncology
+      cancer: "Cancer & Tumor Specialist",
+      tumor: "Cancer & Tumor Specialist",
+      oncology: "Cancer & Tumor Specialist",
+      breast: "Cancer & Tumor Specialist",
+
+      // Pulmonology
+      chest: "Chest Diseases Specialist",
+      asthma: "Chest Diseases Specialist",
+      respiratory: "Chest Diseases Specialist",
+      cough: "Chest Diseases Specialist",
+      lung: "Chest Diseases Specialist",
+
+      // Endocrinology
+      diabetes: "Diabetes Specialist",
+      sugar: "Diabetes Specialist",
+      hormone: "Endocrinology",
+      thyroid: "Endocrinology",
+
+      // Rheumatology
+      rheumatism: "Rheumatology",
+      jointpain: "Rheumatology",
+
+      // Psychiatry
+      mental: "Psychiatry",
+      depression: "Psychiatry",
+      addiction: "Psychiatry",
+      psychiatry: "Psychiatry",
+
+      // Dermatology
+      skin: "Dermatology",
+      rash: "Dermatology",
+      allergy: "Dermatology",
+      leprosy: "Dermatology",
+      eczema: "Dermatology",
+
+      // General
+      general: "General Specialist",
+      medicine: "Medicine Specialist",
+
+      // Hepatology
+      liver: "Hepatology Specialist",
+      pancreas: "Hepatology Specialist",
+      gallbladder: "Hepatology Specialist",
+      jaundice: "Hepatology Specialist",
+
+      // Gastro
+      gastro: "Gastro Liver Specialist",
+      stomach: "Gastro Liver Specialist",
+
+      // Urology
+      kidney: "Kidney Diseases Specialist",
+      dialysis: "Kidney Diseases Specialist",
+      urine: "Kidney Diseases Specialist",
+      prostate: "Kidney Diseases Specialist",
+
+      // Neurosurgery
+      neurosurgery: "Neurosurgery",
+      skull: "Neurosurgery",
     };
 
-    const specialtiesToSearch: string[] = [];
+    const specialties: string[] = [];
 
-    if (criteria.specialty) {
-      specialtiesToSearch.push(criteria.specialty);
+    if (criteria.specialty) specialties.push(criteria.specialty);
+    if (criteria.condition) {
+      const mapped = conditionToSpecialtyMap[criteria.condition.toLowerCase()];
+      if (mapped) specialties.push(mapped);
     }
 
-    if (
-      criteria.condition &&
-      conditionToSpecialtyMap[criteria.condition.toLowerCase()]
-    ) {
-      specialtiesToSearch.push(
-        conditionToSpecialtyMap[criteria.condition.toLowerCase()]
-      );
+    for (const cond of criteria.relatedConditions || []) {
+      const mapped = conditionToSpecialtyMap[cond.toLowerCase()];
+      if (mapped) specialties.push(mapped);
     }
 
-    if (criteria.relatedConditions?.length) {
-      criteria.relatedConditions.forEach((cond: string) => {
-        const mapped = conditionToSpecialtyMap[cond.toLowerCase()];
-        if (mapped) specialtiesToSearch.push(mapped);
-      });
-    }
-
-    // Remove duplicates
-    const uniqueSpecialties = [...new Set(specialtiesToSearch)];
-
-    if (uniqueSpecialties.length > 0) {
+    const uniqueSpecialties = [...new Set(specialties)];
+    if (uniqueSpecialties.length) {
       orConditions.push(
         ...uniqueSpecialties.flatMap((sp) => [
           { specialty: { $regex: sp, $options: "i" } },
-          { specialtyList: { $regex: sp, $options: "i" } },
-          { specialtyCategories: { $regex: sp, $options: "i" } },
+          { specialtyList: { $elemMatch: { $regex: sp, $options: "i" } } },
+          {
+            specialtyCategories: { $elemMatch: { $regex: sp, $options: "i" } },
+          },
         ])
       );
     }
 
-    if (orConditions.length > 0) {
+    if (orConditions.length) {
       query.$or = orConditions;
     }
 
-    // 🕐 Time/day filters (same as your logic)
-    if (criteria.timePreferences) {
-      const timeConditions = [];
-      const timeSlotsConditions = [];
+    // Time filters (supports overlapping range)
+    if (criteria.timePreferences?.length) {
+      const timeOr = [];
 
-      if (criteria.timePreferences.includes("weekdays")) {
-        timeConditions.push({
-          "chambers.visiting_hours.visiting_days": {
-            $in: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-          },
-        });
-      }
-
-      if (criteria.timePreferences.includes("weekend")) {
-        timeConditions.push({
-          "chambers.visiting_hours.visiting_days": {
-            $in: ["Saturday", "Sunday"],
-          },
-        });
-      }
+      const parseTime = (time: string) => time.replace(":", "");
 
       if (criteria.timePreferences.includes("morning")) {
-        timeSlotsConditions.push({
-          $or: [
-            { start_time_24hr: { $lte: "12:00" } },
-            { original_time: { $regex: /morning|am/i } },
-          ],
+        timeOr.push({
+          "chambers.visiting_hours.time_slots": {
+            $elemMatch: {
+              start_time_24hr: { $lte: "12:00" },
+              end_time_24hr: { $gte: "08:00" },
+            },
+          },
         });
       }
 
       if (criteria.timePreferences.includes("afternoon")) {
-        timeSlotsConditions.push({
-          $or: [
-            { start_time_24hr: { $gte: "12:00", $lte: "17:00" } },
-            { original_time: { $regex: /afternoon|pm/i } },
-          ],
+        timeOr.push({
+          "chambers.visiting_hours.time_slots": {
+            $elemMatch: {
+              start_time_24hr: { $lte: "17:00" },
+              end_time_24hr: { $gte: "12:00" },
+            },
+          },
         });
       }
 
       if (criteria.timePreferences.includes("evening")) {
-        timeSlotsConditions.push({
-          $or: [
-            { start_time_24hr: { $gte: "17:00" } },
-            { original_time: { $regex: /evening|night|pm/i } },
-          ],
-        });
-      }
-
-      if (timeSlotsConditions.length > 0) {
-        timeConditions.push({
+        timeOr.push({
           "chambers.visiting_hours.time_slots": {
             $elemMatch: {
-              $and: timeSlotsConditions,
+              start_time_24hr: { $lte: "22:00" },
+              end_time_24hr: { $gte: "17:00" },
             },
           },
         });
       }
 
-      if (timeConditions.length > 0) {
-        query.$and = (query.$and || []).concat({ $or: timeConditions });
-      }
-
-      if (
-        query.$and &&
-        query.$and.some(
-          (cond: any) => cond["chambers.visiting_hours.visiting_days"]
-        )
-      ) {
-        // If we're searching for a specific day, also match the time slots
-        query.$and.push({
-          "chambers.visiting_hours.time_slots": {
-            $elemMatch: {
-              $or: timeSlotsConditions,
-            },
-          },
-        });
+      if (timeOr.length) {
+        query.$and = (query.$and || []).concat([{ $or: timeOr }]);
       }
     }
 
-    // 🚨 Urgency filter
-    if (criteria.urgency === "urgent") {
+    // Hospital filter
+    if (criteria.hospitalPreference) {
       query.$and = (query.$and || []).concat([
         {
-          "chambers.visiting_hours.visiting_days": {
-            $exists: true,
-            $not: { $size: 0 },
-          },
-        },
-        {
           $or: [
-            { "chambers.visiting_hours.visiting_days.1": { $exists: true } },
-            { "chambers.visiting_hours.time_slots.1": { $exists: true } },
+            {
+              "chambers.hospital_name": {
+                $regex: new RegExp(criteria.hospitalPreference, "i"),
+              },
+            },
+            {
+              workplace: {
+                $regex: new RegExp(criteria.hospitalPreference, "i"),
+              },
+            },
+            {
+              source_hospital: {
+                $regex: new RegExp(criteria.hospitalPreference, "i"),
+              },
+            },
           ],
         },
       ]);
     }
 
-    // 🏥 Hospital filter
-    if (criteria.hospitalPreference) {
-      const hospitalQuery = {
-        $or: [
-          {
-            "chambers.hospital_name": {
-              $regex: `\\b${criteria.hospitalPreference}\\b`,
-              $options: "i",
-            },
-          },
-          {
-            workplace: {
-              $regex: `\\b${criteria.hospitalPreference}\\b`,
-              $options: "i",
-            },
-          },
-          {
-            source_hospital: {
-              $regex: `\\b${criteria.hospitalPreference}\\b`,
-              $options: "i",
-            },
-          },
-        ],
-      };
-
-      // Add to main query
-      query.$and = (query.$and || []).concat(hospitalQuery);
+    // Urgency
+    if (criteria.urgency === true) {
+      query.$and = (query.$and || []).concat([
+        {
+          $or: [
+            { "chambers.visiting_hours.time_slots.1": { $exists: true } },
+            { "chambers.visiting_hours.visiting_days.1": { $exists: true } },
+          ],
+        },
+      ]);
     }
 
     return query;
