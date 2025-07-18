@@ -33,7 +33,10 @@ export const DoctorServices = {
     if (query.district) filter.district = query.district;
 
     // Specialty filter
-    if (query.specialty) {
+    if (
+      query.specialty &&
+      mongoose.Types.ObjectId.isValid(query.specialty as string)
+    ) {
       const specializations = await DoctorSpecialization.find({
         specialization: new mongoose.Types.ObjectId(query.specialty as string),
       });
@@ -47,8 +50,17 @@ export const DoctorServices = {
         { specialty: { $regex: query.searchTerm, $options: "i" } },
         { degree: { $regex: query.searchTerm, $options: "i" } },
         { designation: { $regex: query.searchTerm, $options: "i" } },
-        { specialtyList: { $regex: query.searchTerm, $options: "i" } },
-        { specialtyCategories: { $regex: query.searchTerm, $options: "i" } },
+        {
+          specialtyList: {
+            $elemMatch: { $regex: query.searchTerm, $options: "i" },
+          },
+        },
+        {
+          specialtyCategories: {
+            $elemMatch: { $regex: query.searchTerm, $options: "i" },
+          },
+        },
+
         {
           "chambers.hospital_name": { $regex: query.searchTerm, $options: "i" },
         },
@@ -88,7 +100,9 @@ export const DoctorServices = {
 
     // Visiting days filter (exact match)
     if (query.visiting_day) {
-      filter["chambers.visiting_hours.visiting_days"] = query.visiting_day;
+      filter["chambers.visiting_hours.visiting_days"] = {
+        $in: [query.visiting_day],
+      };
     }
 
     // Visiting hours filter (partial match)
@@ -100,14 +114,14 @@ export const DoctorServices = {
     }
 
     // Time slot filter
+    // Assume query.time_slot is a 24-hour string like "18:00"
     if (query.time_slot) {
+      const inputTime = query.time_slot; // must be in "HH:mm" format like "18:00"
+
       filter["chambers.visiting_hours.time_slots"] = {
         $elemMatch: {
-          $or: [
-            { start_time_24hr: { $regex: query.time_slot, $options: "i" } },
-            { end_time_24hr: { $regex: query.time_slot, $options: "i" } },
-            { original_time: { $regex: query.time_slot, $options: "i" } },
-          ],
+          start_time_24hr: { $lte: inputTime },
+          end_time_24hr: { $gte: inputTime },
         },
       };
     }
