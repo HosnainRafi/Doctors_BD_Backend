@@ -11,6 +11,8 @@ import mongoose, { SortOrder } from "mongoose";
 import { DoctorSpecialization } from "../doctor-specialization/doctorSpecialization.model";
 import axios from "axios";
 import config from "../../app/config";
+import franc from "franc";
+import { translateToEnglishIfBengali } from "../../shared/translation";
 // adjust path if needed
 
 export const DoctorServices = {
@@ -251,11 +253,18 @@ export const DoctorServices = {
     meta: any;
     searchCriteria: any;
   }> {
+    // Step 1: Translate Bengali (if needed)
+    console.log(prompt);
+    const translatedPrompt = await translateToEnglishIfBengali(prompt);
+    console.log("Translated prompt:", translatedPrompt);
+
+    // Step 2: Continue with AI processing
+
     const aiResponse = await this.analyzePromptWithOpenRouter(prompt);
     const searchCriteria = this.extractSearchCriteria(aiResponse);
     const mongoQuery = this.buildMongoQuery(searchCriteria);
     const doctors = await Doctor.find(mongoQuery).lean();
-
+    console.log(searchCriteria);
     return {
       data: doctors,
       meta: {

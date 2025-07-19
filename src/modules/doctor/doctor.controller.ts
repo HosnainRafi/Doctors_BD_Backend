@@ -157,7 +157,7 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
 
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
   const { prompt } = req.body;
-
+  console.log(prompt);
   if (!prompt) {
     throw new Error("Search prompt is required");
   }
