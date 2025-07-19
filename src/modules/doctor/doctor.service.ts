@@ -248,7 +248,10 @@ export const DoctorServices = {
     return await Doctor.find({ isDeleted: true }).lean();
   },
 
-  async aiSearchDoctors(prompt: string): Promise<{
+  async aiSearchDoctors(
+    prompt: string,
+    fallbackLocation?: string
+  ): Promise<{
     data: IDoctorDocument[];
     meta: any;
     searchCriteria: any;
@@ -261,7 +264,10 @@ export const DoctorServices = {
     // Step 2: Continue with AI processing
 
     const aiResponse = await this.analyzePromptWithOpenRouter(prompt);
-    const searchCriteria = this.extractSearchCriteria(aiResponse);
+    const searchCriteria = this.extractSearchCriteria(
+      aiResponse,
+      fallbackLocation || null
+    );
     const mongoQuery = this.buildMongoQuery(searchCriteria);
     const doctors = await Doctor.find(mongoQuery).lean();
     console.log(searchCriteria);
@@ -324,12 +330,15 @@ export const DoctorServices = {
     }
   },
 
-  extractSearchCriteria(aiResponse: any) {
+  extractSearchCriteria(
+    aiResponse: any,
+    fallbackLocation: string | null = null
+  ) {
     return {
       condition: aiResponse.condition || null,
       specialty: aiResponse.specialty || null,
       relatedConditions: aiResponse.relatedConditions || [],
-      district: aiResponse.district || null,
+      district: aiResponse.district || fallbackLocation || null,
       timePreferences: aiResponse.timePreferences || [],
       hospitalPreference: aiResponse.hospitalPreference || null,
       dateRequirement: aiResponse.dateRequirement || null,

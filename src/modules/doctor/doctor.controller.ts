@@ -156,15 +156,18 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
-  const { prompt } = req.body;
-  console.log(prompt);
+  const { prompt, fallbackLocation } = req.body;
+
   if (!prompt) {
     throw new Error("Search prompt is required");
   }
 
   try {
     console.log("Processing AI search for prompt:", prompt);
-    const result = await DoctorServices.aiSearchDoctors(prompt);
+    const result = await DoctorServices.aiSearchDoctors(
+      prompt,
+      fallbackLocation
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
