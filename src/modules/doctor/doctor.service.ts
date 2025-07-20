@@ -11,8 +11,7 @@ import mongoose, { SortOrder } from "mongoose";
 import { DoctorSpecialization } from "../doctor-specialization/doctorSpecialization.model";
 import axios from "axios";
 import config from "../../app/config";
-import franc from "franc";
-import { translateToEnglishIfBengali } from "../../shared/translation";
+import { translateObjectFieldsIfBengali } from "../../shared/translationNew";
 // adjust path if needed
 
 export const DoctorServices = {
@@ -249,28 +248,28 @@ export const DoctorServices = {
   },
 
   async aiSearchDoctors(
-    prompt: string,
+    prompt: string, // Already translated to English in the controller!
     fallbackLocation?: string
   ): Promise<{
     data: IDoctorDocument[];
     meta: any;
     searchCriteria: any;
   }> {
-    // Step 1: Translate Bengali (if needed)
-    console.log(prompt);
-    const translatedPrompt = await translateToEnglishIfBengali(prompt);
-    console.log("Translated prompt:", translatedPrompt);
+    // Step 1: Log the prompt received (should be English)
+    console.log("Prompt received by service:", prompt);
 
     // Step 2: Continue with AI processing
-
     const aiResponse = await this.analyzePromptWithOpenRouter(prompt);
+    console.log("AI response:", aiResponse);
+
     const searchCriteria = this.extractSearchCriteria(
       aiResponse,
       fallbackLocation || null
     );
     const mongoQuery = this.buildMongoQuery(searchCriteria);
     const doctors = await Doctor.find(mongoQuery).lean();
-    console.log(searchCriteria);
+    console.log("Search criteria:", searchCriteria);
+
     return {
       data: doctors,
       meta: {
@@ -292,19 +291,63 @@ export const DoctorServices = {
           messages: [
             {
               role: "system",
-              content: `You are a medical assistant AI. Extract key medical search criteria from user queries and respond ONLY with valid JSON. 
-  Include date-related information when users mention "today", "tomorrow" or specific days.
-  
-  Return the following fields:
-  - condition
-  - district
-  - specialty
-  - timePreferences (array: morning, afternoon, evening, weekday, weekend)
-  - dateRequirement (enum: null, "today", "tomorrow", "specific_date")
-  - specificDate (string in YYYY-MM-DD format if applicable)
-  - urgency (true/false)
-  - hospitalPreference
-  - relatedConditions (array)`,
+              content: `
+You are a medical assistant AI. Your task is to extract key medical search criteria from user queries and respond ONLY with a valid JSON object.
+
+⚠️ VERY IMPORTANT INSTRUCTIONS:
+
+1. **ALWAYS translate non-English (e.g., Bengali) queries to English internally** before processing.
+2. **ALL fields in your JSON output must be in ENGLISH.**
+3. The "specialty" field is REQUIRED. You MUST map any condition or symptom to a valid specialty. Do not leave it null.
+4. If the specialty is unclear or not mentioned, use the most likely one based on the condition. Default to "Medicine Specialist" if unsure.
+5. Include urgency = true if the tone or language indicates urgency (e.g., "need urgently", "emergency").
+6. If the user mentions a district in Bangla (e.g., "কুষ্টিয়া"), translate it to English ("Kushtia").
+
+✅ JSON FIELDS (Always include all):
+- condition (string)
+- district (string)
+- specialty (string)
+- timePreferences (array of: "morning", "afternoon", "evening", "weekday", "weekend")
+- dateRequirement ("today" | "tomorrow" | "specific_date" | null)
+- specificDate (format: YYYY-MM-DD or null)
+- urgency (true | false)
+- hospitalPreference (string or null)
+- relatedConditions (array of strings)
+
+📌 EXAMPLES:
+
+Example 1:
+User: "I need a doctor for abdominal pain in Dhaka tomorrow"
+Response:
+{
+  "condition": "abdominal pain",
+  "district": "Dhaka",
+  "specialty": "Gastroenterology",
+  "timePreferences": [],
+  "dateRequirement": "tomorrow",
+  "specificDate": null,
+  "urgency": false,
+  "hospitalPreference": null,
+  "relatedConditions": []
+}
+
+Example 2:
+User: "আমার পেটে ব্যথা হচ্ছে কুষ্টিয়া তে"
+Response:
+{
+  "condition": "abdominal pain",
+  "district": "Kushtia",
+  "specialty": "Gastroenterology",
+  "timePreferences": [],
+  "dateRequirement": null,
+  "specificDate": null,
+  "urgency": false,
+  "hospitalPreference": null,
+  "relatedConditions": []
+}
+
+ONLY return the JSON object. Do not add any explanation or extra text.
+`,
             },
 
             { role: "user", content: prompt },
@@ -320,7 +363,10 @@ export const DoctorServices = {
 
       const content = response.data.choices?.[0]?.message?.content;
       console.log(content);
-      return JSON.parse(content);
+      let aiResponse = JSON.parse(content);
+      aiResponse = await translateObjectFieldsIfBengali(aiResponse);
+
+      return aiResponse;
     } catch (error: any) {
       console.error(
         "OpenRouter AI Error:",
@@ -494,20 +540,39 @@ export const DoctorServices = {
       skull: "Neurosurgery",
     };
 
+    // --- Specialty mapping ---
     const specialties: string[] = [];
 
+    // 1. From AI
     if (criteria.specialty) specialties.push(criteria.specialty);
+
+    // 2. From condition (exact and partial/fuzzy)
     if (criteria.condition) {
-      const mapped = conditionToSpecialtyMap[criteria.condition.toLowerCase()];
-      if (mapped) specialties.push(mapped);
+      const cond = criteria.condition.toLowerCase();
+      if (conditionToSpecialtyMap[cond]) {
+        specialties.push(conditionToSpecialtyMap[cond]);
+      } else {
+        for (const [key, value] of Object.entries(conditionToSpecialtyMap)) {
+          if (cond.includes(key)) {
+            specialties.push(value);
+          }
+        }
+      }
     }
 
+    // 3. From related conditions
     for (const cond of criteria.relatedConditions || []) {
       const mapped = conditionToSpecialtyMap[cond.toLowerCase()];
       if (mapped) specialties.push(mapped);
     }
 
+    // Remove duplicates and fallback
     const uniqueSpecialties = [...new Set(specialties)];
+    if (uniqueSpecialties.length === 0) {
+      uniqueSpecialties.push("Medicine Specialist");
+    }
+
+    // Use uniqueSpecialties below...
     if (uniqueSpecialties.length) {
       orConditions.push(
         ...uniqueSpecialties.flatMap((sp) => [
@@ -519,6 +584,28 @@ export const DoctorServices = {
         ])
       );
     }
+
+    if (orConditions.length) {
+      query.$or = orConditions;
+    }
+
+    for (const cond of criteria.relatedConditions || []) {
+      const mapped = conditionToSpecialtyMap[cond.toLowerCase()];
+      if (mapped) specialties.push(mapped);
+    }
+
+    // const uniqueSpecialties = [...new Set(specialties)];
+    // if (uniqueSpecialties.length) {
+    //   orConditions.push(
+    //     ...uniqueSpecialties.flatMap((sp) => [
+    //       { specialty: { $regex: sp, $options: "i" } },
+    //       { specialtyList: { $elemMatch: { $regex: sp, $options: "i" } } },
+    //       {
+    //         specialtyCategories: { $elemMatch: { $regex: sp, $options: "i" } },
+    //       },
+    //     ])
+    //   );
+    // }
 
     if (orConditions.length) {
       query.$or = orConditions;

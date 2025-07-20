@@ -1,4 +1,4 @@
-// src/utils/translation.ts
+// src/shared/translation.ts
 import axios from "axios";
 
 export const translateToEnglishIfBengali = async (

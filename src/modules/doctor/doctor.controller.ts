@@ -8,6 +8,7 @@ import { doctorValidations } from "./doctor.validation";
 import { TDoctor } from "./doctor.interface";
 import { Query } from "express-serve-static-core";
 import mongoose from "mongoose";
+import { translateToEnglishIfBengali } from "../../shared/translation";
 
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
   const doctorData = doctorValidations.createDoctorValidation.parse(req.body);
@@ -162,10 +163,14 @@ const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
     throw new Error("Search prompt is required");
   }
 
+  // Translate here!
+  const translatedPrompt = await translateToEnglishIfBengali(prompt);
+  console.log("Original prompt:", prompt);
+  console.log("Translated prompt:", translatedPrompt);
+
   try {
-    console.log("Processing AI search for prompt:", prompt);
     const result = await DoctorServices.aiSearchDoctors(
-      prompt,
+      translatedPrompt, // Pass translated prompt!
       fallbackLocation
     );
 
