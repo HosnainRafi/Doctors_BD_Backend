@@ -1,6 +1,6 @@
+import { translateDistrictToEnglish } from "./translateDistrictToEnglish";
 import { translateIfBengali } from "./translateIfBengali";
 
-// src/shared/translation.ts
 export const translateObjectFieldsIfBengali = async (
   obj: any
 ): Promise<any> => {
@@ -13,7 +13,12 @@ export const translateObjectFieldsIfBengali = async (
   if (typeof obj === "object" && obj !== null) {
     const result: any = {};
     for (const key of Object.keys(obj)) {
-      result[key] = await translateObjectFieldsIfBengali(obj[key]);
+      if (key === "district" && obj[key]) {
+        // Always map district to English
+        result[key] = await translateDistrictToEnglish(obj[key]);
+      } else {
+        result[key] = await translateObjectFieldsIfBengali(obj[key]);
+      }
     }
     return result;
   }

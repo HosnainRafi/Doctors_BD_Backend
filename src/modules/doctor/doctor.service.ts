@@ -12,6 +12,7 @@ import { DoctorSpecialization } from "../doctor-specialization/doctorSpecializat
 import axios from "axios";
 import config from "../../app/config";
 import { translateObjectFieldsIfBengali } from "../../shared/translationNew";
+import { translateDistrictToEnglish } from "../../shared/translateDistrictToEnglish";
 // adjust path if needed
 
 export const DoctorServices = {
@@ -363,8 +364,16 @@ ONLY return the JSON object. Do not add any explanation or extra text.
 
       const content = response.data.choices?.[0]?.message?.content;
       console.log(content);
-      let aiResponse = JSON.parse(content);
-      aiResponse = await translateObjectFieldsIfBengali(aiResponse);
+      const aiResponse = await translateObjectFieldsIfBengali(
+        JSON.parse(content)
+      );
+
+      // Inside translateObjectFieldsIfBengali():
+      if (aiResponse.district) {
+        aiResponse.district = await translateDistrictToEnglish(
+          aiResponse.district
+        );
+      }
 
       return aiResponse;
     } catch (error: any) {

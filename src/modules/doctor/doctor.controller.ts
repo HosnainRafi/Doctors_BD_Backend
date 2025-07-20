@@ -157,20 +157,25 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
-  const { prompt, fallbackLocation } = req.body;
+  const { prompt, fallbackLocation, language } = req.body;
 
   if (!prompt) {
     throw new Error("Search prompt is required");
   }
 
-  // Translate here!
-  const translatedPrompt = await translateToEnglishIfBengali(prompt);
+  let translatedPrompt = prompt;
+  const normalizedLang = (language || "").toLowerCase();
+  console.log(normalizedLang);
+  if (normalizedLang === "bn-BD") {
+    translatedPrompt = await translateToEnglishIfBengali(prompt);
+  }
+
   console.log("Original prompt:", prompt);
   console.log("Translated prompt:", translatedPrompt);
 
   try {
     const result = await DoctorServices.aiSearchDoctors(
-      translatedPrompt, // Pass translated prompt!
+      translatedPrompt,
       fallbackLocation
     );
 
@@ -199,21 +204,12 @@ const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
       }
     }
 
-    // Type-safe error response
-    const errorResponse: {
-      statusCode: number;
-      success: boolean;
-      message: string;
-      error?: any;
-    } = {
+    const errorResponse = {
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       success: false,
       message: errorMessage,
+      ...(errorDetails && { error: errorDetails }),
     };
-
-    if (errorDetails) {
-      errorResponse.error = errorDetails;
-    }
 
     res.status(errorResponse.statusCode).json(errorResponse);
   }
