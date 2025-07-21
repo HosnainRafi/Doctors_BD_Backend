@@ -79,6 +79,7 @@ export interface IDoctorDocument extends Document {
   source_hospital: string;
   specialtyList: Types.Array<string>;
   specialtyCategories: Types.Array<string>;
+  hospitalIds?: Types.ObjectId[];
   isDeleted: boolean;
   deletedAt: Date | null;
   createdAt: Date;

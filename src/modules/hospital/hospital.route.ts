@@ -11,7 +11,8 @@ router.post(
   validateRequest(HospitalValidations.createHospitalValidation),
   HospitalController.createHospital
 );
-
+// hospital.routes.ts
+router.get("/:id/doctors", HospitalController.getHospitalDoctors);
 router.get("/", HospitalController.getHospitals);
 
 router

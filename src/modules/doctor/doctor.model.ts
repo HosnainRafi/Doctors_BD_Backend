@@ -47,6 +47,7 @@ const doctorSchema = new Schema<IDoctorDocument>(
     source_hospital: { type: String, required: true },
     specialtyList: { type: [String], required: true },
     specialtyCategories: { type: [String], required: true },
+    hospitalIds: [{ type: Schema.Types.ObjectId, ref: "Hospital" }],
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date, default: null },
   },

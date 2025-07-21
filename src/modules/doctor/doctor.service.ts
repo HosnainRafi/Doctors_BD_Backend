@@ -13,6 +13,7 @@ import axios from "axios";
 import config from "../../app/config";
 import { translateObjectFieldsIfBengali } from "../../shared/translationNew";
 import { translateDistrictToEnglish } from "../../shared/translateDistrictToEnglish";
+import { smartCleanDistrict } from "../../shared/overrideCurrentDistrict";
 // adjust path if needed
 
 export const DoctorServices = {
@@ -303,6 +304,7 @@ You are a medical assistant AI. Your task is to extract key medical search crite
 4. If the specialty is unclear or not mentioned, use the most likely one based on the condition. Default to "Medicine Specialist" if unsure.
 5. Include urgency = true if the tone or language indicates urgency (e.g., "need urgently", "emergency").
 6. If the user mentions a district in Bangla (e.g., "কুষ্টিয়া"), translate it to English ("Kushtia").
+7. If the user mentions a location with "around", "near", "beside","of" or similar, ALWAYS use that location as the 'district', even if another location is mentioned with "in". Ignore the "in" location for the main search.
 
 ✅ JSON FIELDS (Always include all):
 - condition (string)
@@ -368,7 +370,9 @@ ONLY return the JSON object. Do not add any explanation or extra text.
         JSON.parse(content)
       );
 
-      // Inside translateObjectFieldsIfBengali():
+      aiResponse.district = smartCleanDistrict(prompt, aiResponse.district);
+
+      // Translate Bengali district if needed
       if (aiResponse.district) {
         aiResponse.district = await translateDistrictToEnglish(
           aiResponse.district

@@ -166,7 +166,7 @@ const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
   let translatedPrompt = prompt;
   const normalizedLang = (language || "").toLowerCase();
   console.log(normalizedLang);
-  if (normalizedLang === "bn-BD") {
+  if (normalizedLang === "bn-bd") {
     translatedPrompt = await translateToEnglishIfBengali(prompt);
   }
 

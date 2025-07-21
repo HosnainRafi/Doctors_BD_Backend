@@ -15,11 +15,14 @@ export const HospitalService = {
   async getHospitals(
     filters: FilterQuery<IHospital>,
     options: IPaginationOptions
-  ) {
+  ): Promise<{
+    meta: { page: number; limit: number; total: number };
+    data: HospitalModel[];
+  }> {
     const { limit, page, skip } = calculatePagination(options);
     const { searchTerm, ...filterData } = filters;
 
-    const andConditions: any[] = [{ isDeleted: false }]; // Default filter
+    const andConditions: any[] = [{ isDeleted: false }];
 
     if (searchTerm) {
       andConditions.push({
@@ -36,10 +39,7 @@ export const HospitalService = {
 
     const whereCondition =
       andConditions.length > 0 ? { $and: andConditions } : {};
-    console.log(
-      "Final whereCondition:",
-      JSON.stringify(whereCondition, null, 2)
-    );
+
     const [hospitals, total] = await Promise.all([
       Hospital.find(whereCondition)
         .skip(skip)
@@ -71,5 +71,15 @@ export const HospitalService = {
 
   async deleteHospital(id: string): Promise<HospitalModel | null> {
     return Hospital.findByIdAndUpdate(id, { isDeleted: true }, { new: true });
+  },
+
+  // New: Get all doctors for a hospital (assuming doctorIds is in hospital)
+  async getHospitalDoctors(id: string) {
+    const hospital = await Hospital.findOne({ _id: id, isDeleted: false });
+    if (!hospital || !hospital.doctorIds || !hospital.doctorIds.length)
+      return [];
+    // Import Doctor model here or at the top
+    const { Doctor } = require("../doctor/doctor.model");
+    return Doctor.find({ _id: { $in: hospital.doctorIds }, isDeleted: false });
   },
 };

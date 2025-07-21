@@ -28,6 +28,7 @@ const hospitalSchema = new Schema<HospitalModel>(
       country: String,
       country_code: String,
     },
+    doctorIds: [{ type: Schema.Types.ObjectId, ref: "Doctor" }],
   },
   { timestamps: true, versionKey: false }
 );

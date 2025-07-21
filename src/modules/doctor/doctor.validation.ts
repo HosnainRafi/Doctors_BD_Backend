@@ -1,4 +1,5 @@
 // src/modules/doctor/doctor.validation.ts
+import mongoose from "mongoose";
 import { z } from "zod";
 
 const timeSlotValidation = z.object({
@@ -39,6 +40,9 @@ export const createDoctorValidation = z.object({
     profile_url: z.string().url(),
     designation: z.string(),
     source_hospital: z.string(),
+    hospitalIds: z
+      .array(z.string().transform((val) => new mongoose.Types.ObjectId(val)))
+      .optional(),
     specialtyList: z.array(z.string()),
     specialtyCategories: z.array(z.string()),
   }),

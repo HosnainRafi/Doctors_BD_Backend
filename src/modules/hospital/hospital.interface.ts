@@ -19,6 +19,7 @@ export interface IHospital {
     country?: string;
     country_code?: string;
   };
+  doctorIds?: Types.ObjectId[];
 }
 
 export interface HospitalModel extends Document, IHospital {

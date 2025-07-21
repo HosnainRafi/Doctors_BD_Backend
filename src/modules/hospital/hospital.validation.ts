@@ -11,6 +11,9 @@ export const createHospitalValidation = z.object({
     contactNumbers: z.array(z.string().regex(phoneRegex)).min(1),
     googleMapUrl: z.string().url().optional(),
     facilities: z.array(z.string()).optional(),
+    doctorIds: z
+      .array(z.string().transform((val) => new mongoose.Types.ObjectId(val)))
+      .optional(),
   }),
 });
 
@@ -25,6 +28,9 @@ export const updateHospitalValidation = z.object({
     contactNumbers: z.array(z.string().regex(phoneRegex)).min(1).optional(),
     googleMapUrl: z.string().url().optional(),
     facilities: z.array(z.string()).optional(),
+    doctorIds: z
+      .array(z.string().transform((val) => new mongoose.Types.ObjectId(val)))
+      .optional(),
   }),
 });
 
