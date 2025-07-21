@@ -7,6 +7,7 @@ import {
   TDoctor,
 } from "./doctor.interface";
 import { Query } from "express-serve-static-core";
+import { ParsedQs } from "qs";
 import mongoose, { SortOrder } from "mongoose";
 import { DoctorSpecialization } from "../doctor-specialization/doctorSpecialization.model";
 import axios from "axios";
@@ -127,6 +128,33 @@ export const DoctorServices = {
           end_time_24hr: { $gte: inputTime },
         },
       };
+    }
+    // ...existing code
+
+    // Filter by specialtyCategoryIds (multiple selection)
+    if (query.specialtyCategoryIds) {
+      let ids: string[] = [];
+      const raw = query.specialtyCategoryIds;
+      if (Array.isArray(raw)) {
+        ids = raw.map((val) => (typeof val === "string" ? val : String(val)));
+      } else if (typeof raw === "string") {
+        ids = raw.split(",");
+      } else if (raw) {
+        ids = [String(raw)];
+      }
+      const objectIds = ids
+        .map((id) => {
+          try {
+            return new mongoose.Types.ObjectId(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter((id): id is mongoose.Types.ObjectId => !!id);
+
+      if (objectIds.length > 0) {
+        filter.specialtyCategoryIds = { $in: objectIds };
+      }
     }
 
     // Pagination parameters
