@@ -34,7 +34,8 @@ export const DoctorServices = {
     const filter: mongoose.FilterQuery<IDoctorDocument> = { isDeleted: false };
     console.log(query);
     // Basic filters
-    if (query.district) filter.district = query.district;
+    if (query.district)
+      filter.district = { $regex: `^${query.district}$`, $options: "i" };
 
     // Specialty filter
     if (
@@ -129,7 +130,6 @@ export const DoctorServices = {
         },
       };
     }
-    // ...existing code
 
     // Filter by specialtyCategoryIds (multiple selection)
     if (query.specialtyCategoryIds) {
@@ -157,9 +157,34 @@ export const DoctorServices = {
       }
     }
 
+    if (query.hospitalIds) {
+      let ids: string[] = [];
+      const raw = query.hospitalIds;
+      if (Array.isArray(raw)) {
+        ids = raw.map((val) => (typeof val === "string" ? val : String(val)));
+      } else if (typeof raw === "string") {
+        ids = raw.split(",");
+      } else if (raw) {
+        ids = [String(raw)];
+      }
+      const objectIds = ids
+        .map((id) => {
+          try {
+            return new mongoose.Types.ObjectId(id);
+          } catch {
+            return null;
+          }
+        })
+        .filter((id): id is mongoose.Types.ObjectId => !!id);
+
+      if (objectIds.length > 0) {
+        filter.hospitalIds = { $in: objectIds };
+      }
+    }
+
     // Pagination parameters
     const page = parseInt(query.page as string) || 1;
-    const limit = parseInt(query.limit as string) || 10;
+    const limit = parseInt(query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
     // Sorting
@@ -334,7 +359,7 @@ You are a medical assistant AI. Your task is to extract key medical search crite
 6. If the user mentions a district in Bangla (e.g., "কুষ্টিয়া"), translate it to English ("Kushtia").
 7. If the user mentions a location with "around", "near", "beside","of" or similar, ALWAYS use that location as the 'district', even if another location is mentioned with "in". Ignore the "in" location for the main search.
 
-✅ JSON FIELDS (Always include all):
+JSON FIELDS (Always include all):
 - condition (string)
 - district (string)
 - specialty (string)
@@ -617,10 +642,14 @@ ONLY return the JSON object. Do not add any explanation or extra text.
     if (uniqueSpecialties.length) {
       orConditions.push(
         ...uniqueSpecialties.flatMap((sp) => [
-          { specialty: { $regex: sp, $options: "i" } },
-          { specialtyList: { $elemMatch: { $regex: sp, $options: "i" } } },
+          { specialty: { $regex: `^${sp}$`, $options: "i" } },
           {
-            specialtyCategories: { $elemMatch: { $regex: sp, $options: "i" } },
+            specialtyList: { $elemMatch: { $regex: `^${sp}$`, $options: "i" } },
+          },
+          {
+            specialtyCategories: {
+              $elemMatch: { $regex: `^${sp}$`, $options: "i" },
+            },
           },
         ])
       );

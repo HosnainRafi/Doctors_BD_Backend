@@ -9,6 +9,11 @@ import { TDoctor } from "./doctor.interface";
 import { Query } from "express-serve-static-core";
 import mongoose from "mongoose";
 import { translateToEnglishIfBengali } from "../../shared/translation";
+import { getNearestDistrict } from "../../shared/getNearestDistrict";
+import {
+  extractSupportedDistrict,
+  SUPPORTED_DISTRICTS,
+} from "../../shared/supportedDistric";
 
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
   const doctorData = doctorValidations.createDoctorValidation.parse(req.body);
@@ -157,62 +162,63 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
 });
 
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
-  const { prompt, fallbackLocation, language } = req.body;
+  const { prompt, fallbackLocation, language, lat, lon } = req.body;
 
-  if (!prompt) {
-    throw new Error("Search prompt is required");
-  }
+  if (!prompt) throw new Error("Search prompt is required");
 
   let translatedPrompt = prompt;
   const normalizedLang = (language || "").toLowerCase();
-  console.log(normalizedLang);
   if (normalizedLang === "bn-bd") {
     translatedPrompt = await translateToEnglishIfBengali(prompt);
   }
 
-  console.log("Original prompt:", prompt);
-  console.log("Translated prompt:", translatedPrompt);
+  // 1. Get AI search criteria
+  const result = await DoctorServices.aiSearchDoctors(
+    translatedPrompt,
+    fallbackLocation
+  );
+  let requestedDistrict = result.searchCriteria.district;
+  let usedDistrict =
+    extractSupportedDistrict(requestedDistrict) || requestedDistrict;
+  let note = null;
 
-  try {
-    const result = await DoctorServices.aiSearchDoctors(
-      translatedPrompt,
-      fallbackLocation
-    );
+  // 2. Check if requestedDistrict is in supported list (case-insensitive)
+  const matchedDistrict = SUPPORTED_DISTRICTS.find(
+    (d) => d.toLowerCase() === (requestedDistrict || "").toLowerCase()
+  );
 
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "AI search results retrieved successfully",
-      data: result.data,
-      meta: result.meta,
-    });
-  } catch (error: unknown) {
-    let errorMessage = "AI search failed";
-    let errorDetails: any = undefined;
-
-    if (error instanceof Error) {
-      errorMessage = error.message.includes("Failed to analyze")
-        ? "The AI service is currently unavailable. Please try a simpler search."
-        : error.message;
-
-      if (process.env.NODE_ENV === "development") {
-        errorDetails = {
-          message: error.message,
-          stack: error.stack,
-          name: error.name,
-        };
-      }
+  // 3. If not supported, fallback to nearest supported district using lat/lon
+  if (!matchedDistrict) {
+    if (lat && lon) {
+      usedDistrict = getNearestDistrict(Number(lat), Number(lon));
+      note = `We do not have data for "${requestedDistrict}". Showing doctors from the nearest available district: ${usedDistrict}.`;
+    } else {
+      // If no lat/lon, fallback to a default (e.g., Dhaka)
+      usedDistrict = "Dhaka";
+      note = `We do not have data for "${requestedDistrict}". Showing doctors from Dhaka.`;
     }
-
-    const errorResponse = {
-      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
-      success: false,
-      message: errorMessage,
-      ...(errorDetails && { error: errorDetails }),
-    };
-
-    res.status(errorResponse.statusCode).json(errorResponse);
   }
+
+  // 4. Search for doctors using full AI criteria, but override district if needed
+  const aiCriteria = { ...result.searchCriteria, district: usedDistrict };
+  const doctorsResult = await DoctorServices.aiSearchDoctors(
+    prompt, // or translatedPrompt
+    usedDistrict
+  );
+  // 5. If still no doctors, you can fallback to another logic or show a message
+  if (!doctorsResult.data || doctorsResult.data.length === 0) {
+    note = `No doctors found in ${usedDistrict}.`;
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "AI search results retrieved successfully",
+    data: doctorsResult.data,
+    meta: doctorsResult.meta,
+    usedDistrict,
+    note,
+  });
 });
 
 export const doctorController = {

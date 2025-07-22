@@ -2,25 +2,19 @@
 
 import { Response } from "express";
 
-type IApiResponse<T> = {
+export type IApiResponse<T> = {
   statusCode: number;
   success: boolean;
-  message?: string;
+  message: string;
   data: T;
-  meta?: {
-    page: number;
-    limit: number;
-    total?: number;
-  };
+  meta?: any;
+  [key: string]: any; // allow extra fields
 };
 
 const sendResponse = <T>(res: Response, data: IApiResponse<T>): void => {
-  res.status(data.statusCode).json({
-    success: data.success,
-    message: data.message,
-    meta: data.meta,
-    data: data.data,
-  });
+  // Destructure statusCode and the rest
+  const { statusCode, ...rest } = data;
+  res.status(statusCode).json(rest);
 };
 
 export default sendResponse;
