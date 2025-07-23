@@ -3,6 +3,7 @@ import { DistrictModel } from "./district.interface";
 
 const districtSchema = new Schema<DistrictModel>(
   {
+    id: { type: Number, required: true, unique: true },
     name: {
       type: String,
       required: true,

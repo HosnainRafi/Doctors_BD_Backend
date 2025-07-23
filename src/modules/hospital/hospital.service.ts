@@ -6,6 +6,7 @@ import {
 } from "./hospital.interface";
 import { FilterQuery } from "mongoose";
 import { calculatePagination } from "../../shared/calculatePagination";
+import { District } from "../district/district.model";
 
 export const HospitalService = {
   async createHospital(payload: IHospital): Promise<HospitalModel> {
@@ -81,5 +82,18 @@ export const HospitalService = {
     // Import Doctor model here or at the top
     const { Doctor } = require("../doctor/doctor.model");
     return Doctor.find({ _id: { $in: hospital.doctorIds }, isDeleted: false });
+  },
+
+  async getHospitalsByDistrictName(districtName: string) {
+    // Find the district by name (case-insensitive)
+    const district = await District.findOne({
+      name: { $regex: `^${districtName}$`, $options: "i" },
+    });
+    if (!district) return [];
+    // Find hospitals with matching district_id
+    return Hospital.find({
+      district_id: district.id,
+      isDeleted: false,
+    });
   },
 };

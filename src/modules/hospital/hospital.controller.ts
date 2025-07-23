@@ -67,6 +67,29 @@ const getHospital = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getHospitalsByDistrictName = catchAsync(async (req, res) => {
+  const { districtName } = req.params;
+  const hospitals = await HospitalService.getHospitalsByDistrictName(
+    districtName
+  );
+
+  if (!hospitals.length) {
+    return sendResponse(res, {
+      statusCode: 404,
+      success: false,
+      message: "No hospitals found for this district",
+      data: [],
+    });
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Hospitals retrieved successfully",
+    data: hospitals,
+  });
+});
+
 // Update hospital by ID
 const updateHospital = catchAsync(async (req: Request, res: Response) => {
   const { body } = HospitalValidations.updateHospitalValidation.parse(req);
@@ -110,5 +133,6 @@ export const HospitalController = {
   getHospital,
   updateHospital,
   deleteHospital,
-  getHospitalDoctors, // <-- Export the new controller
+  getHospitalDoctors,
+  getHospitalsByDistrictName,
 };

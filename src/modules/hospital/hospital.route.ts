@@ -14,7 +14,10 @@ router.post(
 // hospital.routes.ts
 router.get("/:id/doctors", HospitalController.getHospitalDoctors);
 router.get("/", HospitalController.getHospitals);
-
+router.get(
+  "/by-district/:districtName",
+  HospitalController.getHospitalsByDistrictName
+);
 router
   .route("/:id")
   .get(HospitalController.getHospital)
