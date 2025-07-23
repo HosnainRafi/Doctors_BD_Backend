@@ -33,6 +33,7 @@ export const DoctorServices = {
   getAllDoctors: async (query: Query) => {
     const filter: mongoose.FilterQuery<IDoctorDocument> = { isDeleted: false };
     console.log(query);
+
     // Basic filters
     if (query.district)
       filter.district = { $regex: `^${query.district}$`, $options: "i" };
@@ -65,7 +66,6 @@ export const DoctorServices = {
             $elemMatch: { $regex: query.searchTerm, $options: "i" },
           },
         },
-
         {
           "chambers.hospital_name": { $regex: query.searchTerm, $options: "i" },
         },
@@ -91,8 +91,16 @@ export const DoctorServices = {
       ];
     }
 
-    // Direct filters for specific chamber fields
-    if (query.hospital_name) {
+    // Hospital filter (NEW: supports ?hospital=)
+    if (query.hospital) {
+      filter.$or = [
+        { "chambers.hospital_name": { $regex: query.hospital, $options: "i" } },
+        { hospital_name: { $regex: query.hospital, $options: "i" } },
+        { workplace: { $regex: query.hospital, $options: "i" } },
+        { source_hospital: { $regex: query.hospital, $options: "i" } },
+      ];
+    } else if (query.hospital_name) {
+      // For backward compatibility
       filter["chambers.hospital_name"] = {
         $regex: query.hospital_name,
         $options: "i",
@@ -119,10 +127,8 @@ export const DoctorServices = {
     }
 
     // Time slot filter
-    // Assume query.time_slot is a 24-hour string like "18:00"
     if (query.time_slot) {
       const inputTime = query.time_slot; // must be in "HH:mm" format like "18:00"
-
       filter["chambers.visiting_hours.time_slots"] = {
         $elemMatch: {
           start_time_24hr: { $lte: inputTime },
