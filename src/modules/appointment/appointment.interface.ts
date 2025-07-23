@@ -1,0 +1,21 @@
+import { Document, Types } from "mongoose";
+
+export interface IAppointment {
+  // For public directory doctor (offline)
+  doctor_id?: Types.ObjectId | string;
+  // For registered/online doctor
+  registered_doctor_id?: Types.ObjectId | string;
+  patient_id: Types.ObjectId | string;
+  chamber_id?: Types.ObjectId | string;
+  date: string;
+  time: string;
+  status?: "pending" | "confirmed" | "cancelled" | "completed";
+  reason?: string;
+  user_id?: string;
+  isActive?: boolean;
+}
+
+export interface AppointmentModel extends Document, IAppointment {
+  createdAt: Date;
+  updatedAt: Date;
+}

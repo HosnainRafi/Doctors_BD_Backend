@@ -1,0 +1,187 @@
+import { Request, Response } from "express";
+import { AppointmentService } from "./appointment.service";
+import { AppointmentValidations } from "./appointment.validation";
+import catchAsync from "../../shared/catchAsync";
+import sendResponse from "../../shared/sendResponse";
+import httpStatus from "http-status";
+import { sendEmail } from "../../app/utils/sendEmail";
+import { Appointment } from "./appointment.model";
+import { sendWhatsapp } from "../../app/utils/sendWhatsapp";
+
+const createAppointment = catchAsync(async (req: Request, res: Response) => {
+  const { body } =
+    AppointmentValidations.createAppointmentValidation.parse(req);
+  const result = await AppointmentService.createAppointment(body);
+
+  // Helper to check if value is a populated object (not string/ObjectId)
+  function isPopulated(
+    obj: any
+  ): obj is { _id?: any; name?: string; email?: string; phone?: string } {
+    return (
+      obj &&
+      typeof obj === "object" &&
+      ("_id" in obj || "name" in obj || "email" in obj || "phone" in obj)
+    );
+  }
+
+  // Populate both doctor types and patient
+  const populated = await Appointment.findById(result._id)
+    .populate("doctor_id")
+    .populate("registered_doctor_id")
+    .populate("patient_id")
+    .lean();
+
+  // Prefer registered doctor if present, else directory doctor
+  const doctor = populated?.registered_doctor_id || populated?.doctor_id;
+  const patient = populated?.patient_id as any;
+
+  // Notify doctor (if you have their email)
+  if (isPopulated(doctor) && doctor.email) {
+    await sendEmail(
+      doctor.email,
+      "New Appointment Booked",
+      `You have a new appointment with patient ${
+        patient?.name || (isPopulated(patient) ? patient._id : patient)
+      } on ${populated?.date} at ${populated?.time}.`
+    );
+  }
+
+  // Notify patient (if you have their email)
+  if (isPopulated(patient) && patient.email) {
+    await sendEmail(
+      patient.email,
+      "Appointment Confirmation",
+      `Your appointment with Dr. ${
+        isPopulated(doctor) ? doctor.name : doctor
+      } is booked for ${populated?.date} at ${populated?.time}.`
+    );
+  }
+
+  // Notify doctor (WhatsApp)
+  if (isPopulated(doctor) && doctor.phone) {
+    try {
+      await sendWhatsapp(
+        doctor.phone,
+        `New appointment with patient ${
+          isPopulated(patient) ? patient.name : patient
+        } on ${populated?.date} at ${populated?.time}.`
+      );
+    } catch (err) {
+      console.error("Failed to send WhatsApp to doctor:", err);
+    }
+  }
+
+  // Notify patient (WhatsApp)
+  if (isPopulated(patient) && patient.phone) {
+    try {
+      await sendWhatsapp(
+        patient.phone,
+        `Your appointment with Dr. ${
+          isPopulated(doctor) ? doctor.name : doctor
+        } is booked for ${populated?.date} at ${populated?.time}.`
+      );
+    } catch (err) {
+      console.error("Failed to send WhatsApp to patient:", err);
+    }
+  }
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: "Appointment created and notifications sent",
+    data: populated,
+  });
+});
+const getAppointments = catchAsync(async (req: Request, res: Response) => {
+  const result = await AppointmentService.getAppointments(req.query);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Appointments retrieved successfully",
+    data: result,
+  });
+});
+
+const getAppointment = catchAsync(async (req: Request, res: Response) => {
+  const result = await AppointmentService.getAppointment(req.params.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Appointment retrieved successfully",
+    data: result,
+  });
+});
+
+// appointment.controller.ts
+const getDoctorAppointments = catchAsync(
+  async (req: Request, res: Response) => {
+    const { doctor_id } = req.params;
+    const appointments = await AppointmentService.getAppointmentsByDoctor(
+      doctor_id
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Appointments for doctor retrieved",
+      data: appointments,
+    });
+  }
+);
+
+const updateAppointment = catchAsync(async (req: Request, res: Response) => {
+  const { body } =
+    AppointmentValidations.updateAppointmentValidation.parse(req);
+  const result = await AppointmentService.updateAppointment(
+    req.params.id,
+    body
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Appointment updated successfully",
+    data: result,
+  });
+});
+
+const deleteAppointment = catchAsync(async (req: Request, res: Response) => {
+  const result = await AppointmentService.deleteAppointment(req.params.id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Appointment deleted successfully",
+    data: result,
+  });
+});
+
+// For registered doctor dashboard
+const getRegisteredDoctorAppointments = catchAsync(
+  async (req: Request, res: Response) => {
+    const { registered_doctor_id } = req.params;
+    const appointments =
+      await AppointmentService.getAppointmentsByRegisteredDoctor(
+        registered_doctor_id
+      );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Appointments for registered doctor retrieved",
+      data: appointments,
+    });
+  }
+);
+
+export const AppointmentController = {
+  createAppointment,
+  getAppointments,
+  getAppointment,
+  updateAppointment,
+  deleteAppointment,
+  getDoctorAppointments,
+  getRegisteredDoctorAppointments,
+};
