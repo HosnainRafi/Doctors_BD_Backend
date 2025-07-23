@@ -14,6 +14,7 @@ import {
   extractSupportedDistrict,
   SUPPORTED_DISTRICTS,
 } from "../../shared/supportedDistric";
+import { Doctor } from "./doctor.model";
 
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
   const doctorData = doctorValidations.createDoctorValidation.parse(req.body);
@@ -161,6 +162,17 @@ const importDoctors = catchAsync(async (req: Request, res: Response) => {
   // NEW FUNCTION (properly placed at the root level)
 });
 
+const getDoctorBySlug = catchAsync(async (req: Request, res: Response) => {
+  const { slug } = req.params;
+  const doctor = await Doctor.findOne({ slug, isDeleted: false });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor retrieved successfully",
+    data: doctor,
+  });
+});
+
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
   const { prompt, fallbackLocation, language, lat, lon } = req.body;
 
@@ -232,4 +244,5 @@ export const doctorController = {
   importDoctors,
   getDeletedDoctors,
   aiDoctorSearch,
+  getDoctorBySlug,
 };
