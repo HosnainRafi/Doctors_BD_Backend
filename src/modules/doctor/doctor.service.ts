@@ -215,6 +215,28 @@ export const DoctorServices = {
     };
   },
 
+  filterSearchDoctors: async (searchTerm: string, limit = 10) => {
+    const filter: mongoose.FilterQuery<IDoctorDocument> = {
+      isDeleted: false,
+      $or: [
+        { name: { $regex: searchTerm, $options: "i" } },
+        { specialty: { $regex: searchTerm, $options: "i" } },
+        {
+          specialtyList: { $elemMatch: { $regex: searchTerm, $options: "i" } },
+        },
+        {
+          specialtyCategories: {
+            $elemMatch: { $regex: searchTerm, $options: "i" },
+          },
+        },
+      ],
+    };
+    return Doctor.find(filter)
+      .limit(limit)
+      .select("name slug specialty photo") // Only return needed fields
+      .lean();
+  },
+
   getSingleDoctor: async (id: string) => {
     const [doctor] = await Doctor.aggregate([
       { $match: { id, isDeleted: false } },

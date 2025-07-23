@@ -173,6 +173,28 @@ const getDoctorBySlug = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const filterSearchDoctors = catchAsync(async (req: Request, res: Response) => {
+  const { q, limit } = req.query;
+  if (!q || typeof q !== "string") {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "Query parameter 'q' is required",
+      data: [],
+    });
+  }
+  const doctors = await DoctorServices.filterSearchDoctors(
+    q,
+    Number(limit) || 10
+  );
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctors search results",
+    data: doctors,
+  });
+});
+
 const aiDoctorSearch = catchAsync(async (req: Request, res: Response) => {
   const { prompt, fallbackLocation, language, lat, lon } = req.body;
 
@@ -243,6 +265,7 @@ export const doctorController = {
   restoreDoctor,
   importDoctors,
   getDeletedDoctors,
+  filterSearchDoctors,
   aiDoctorSearch,
   getDoctorBySlug,
 };

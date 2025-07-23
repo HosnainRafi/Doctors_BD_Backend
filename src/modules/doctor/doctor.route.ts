@@ -7,13 +7,14 @@ import multer from "multer";
 
 const upload = multer();
 const router = express.Router();
-
+router.get("/search", doctorController.filterSearchDoctors);
 router.post(
   "/",
   validateRequest(doctorValidations.createDoctorValidation),
   doctorController.createDoctor
 );
 
+router.get("/slug/:slug", doctorController.getDoctorBySlug);
 router.get("/", doctorController.getAllDoctors);
 router.get("/deleted", doctorController.getDeletedDoctors);
 router.get("/:id", doctorController.getSingleDoctor);
@@ -26,6 +27,5 @@ router.delete("/:id", doctorController.deleteDoctor);
 router.patch("/:id/restore", doctorController.restoreDoctor);
 router.post("/import", upload.single("file"), doctorController.importDoctors);
 router.post("/ai-search", doctorController.aiDoctorSearch);
-router.get("/slug/:slug", doctorController.getDoctorBySlug);
 
 export const DoctorRoutes = router;
