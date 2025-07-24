@@ -9,4 +9,5 @@ export default {
   openUI_url: process.env.OPENUI_API_URL,
   smtp_user: process.env.SMTP_USER,
   smtp_pass: process.env.SMTP_PASS,
+  jwt_secret: process.env.JWT_SECRET,
 };

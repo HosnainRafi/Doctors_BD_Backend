@@ -1,6 +1,7 @@
 import jwt, { SignOptions } from "jsonwebtoken";
+import config from "../config";
 
-const JWT_SECRET: string = process.env.JWT_SECRET || "your_jwt_secret";
+const JWT_SECRET: string = config.jwt_secret || "your_jwt_secret";
 
 export function signJwt(
   payload: object,

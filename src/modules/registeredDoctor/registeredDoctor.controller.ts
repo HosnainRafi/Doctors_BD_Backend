@@ -7,9 +7,12 @@ import httpStatus from "http-status";
 import { signJwt } from "../../app/utils/jwt";
 
 const createDoctor = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    RegisteredDoctorValidations.createRegisteredDoctorValidation.parse(req);
-  const result = await RegisteredDoctorService.createDoctor(body);
+  const newuser =
+    RegisteredDoctorValidations.createRegisteredDoctorValidation.parse(
+      req.body
+    );
+  console.log(req.body);
+  const result = await RegisteredDoctorService.createDoctor(newuser);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -42,13 +45,14 @@ const getDoctor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateDoctor = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    RegisteredDoctorValidations.updateRegisteredDoctorValidation.parse(req);
+  const newUser =
+    RegisteredDoctorValidations.updateRegisteredDoctorValidation.parse(
+      req.body
+    );
   const result = await RegisteredDoctorService.updateDoctor(
     req.params.id,
-    body
+    newUser
   );
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -69,17 +73,18 @@ const deleteDoctor = catchAsync(async (req: Request, res: Response) => {
 });
 
 const loginDoctor = catchAsync(async (req, res) => {
-  const { body } =
-    RegisteredDoctorValidations.loginRegisteredDoctorValidation.parse(req);
-  const doctor = await RegisteredDoctorService.login(body.email, body.password);
-
+  const newUser =
+    RegisteredDoctorValidations.loginRegisteredDoctorValidation.parse(req.body);
+  const doctor = await RegisteredDoctorService.login(
+    newUser.email,
+    newUser.password
+  );
   // Generate JWT
   const token = signJwt({
     id: doctor._id,
     email: doctor.email,
     role: "doctor",
   });
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,

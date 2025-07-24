@@ -1,13 +1,13 @@
-import { Document } from "mongoose";
+import { Document, Types } from "mongoose";
 
 export interface IPatient {
   name: string;
   phone: string;
   email?: string;
-  dob?: string; // ISO date string
+  dob?: string;
   gender?: "male" | "female" | "other";
   address?: string;
-  user_id?: string; // If linked to a user account
+  user_id: Types.ObjectId | string; // <-- required, links to User
   isActive?: boolean;
 }
 
