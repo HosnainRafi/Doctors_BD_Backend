@@ -9,6 +9,8 @@ import { FollowUpRoutes } from "../../modules/followup/followup.routes";
 import { PrescriptionRoutes } from "../../modules/prescription/prescription.routes";
 import { RegisteredDoctorRoutes } from "../../modules/registeredDoctor/registeredDoctor.routes";
 import { UserRoutes } from "../../modules/user/user.routes";
+import { ReviewRoutes } from "../../modules/review/review.routes";
+import { NotificationRoutes } from "../../modules/notifications/notification.routes";
 
 const router = Router();
 
@@ -30,19 +32,19 @@ const moduleRoutes = [
     route: SpecialtyCategoryRoutes,
   },
   {
-    path: "/appointment",
+    path: "/appointments",
     route: AppointmentRoutes,
   },
   {
-    path: "/patient",
+    path: "/patients",
     route: PatientRoutes,
   },
   {
-    path: "/prescription",
+    path: "/prescriptions",
     route: PrescriptionRoutes,
   },
   {
-    path: "/followup",
+    path: "/followups",
     route: FollowUpRoutes,
   },
   {
@@ -52,6 +54,14 @@ const moduleRoutes = [
   {
     path: "/users",
     route: UserRoutes,
+  },
+  {
+    path: "/reviews",
+    route: ReviewRoutes,
+  },
+  {
+    path: "/notifications",
+    route: NotificationRoutes,
   },
 ];
 

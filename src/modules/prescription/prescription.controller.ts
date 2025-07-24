@@ -99,6 +99,7 @@ const getPrescriptionsByDoctor = catchAsync(
 const getPrescriptionsByRegisteredDoctor = catchAsync(
   async (req: Request, res: Response) => {
     const { registered_doctor_id } = req.params;
+    console.log(req.params);
     const prescriptions =
       await PrescriptionService.getPrescriptionsByRegisteredDoctor(
         registered_doctor_id

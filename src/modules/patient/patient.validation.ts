@@ -1,29 +1,25 @@
 import { z } from "zod";
 
 export const createPatientValidation = z.object({
-  body: z.object({
-    name: z.string().min(2),
-    phone: z.string().min(8),
-    email: z.string().email().optional(),
-    dob: z.string().optional(),
-    gender: z.enum(["male", "female", "other"]).optional(),
-    address: z.string().optional(),
-    user_id: z.string(),
-    isActive: z.boolean().optional(),
-  }),
+  name: z.string().min(2),
+  phone: z.string().min(8),
+  email: z.string().email().optional(),
+  dob: z.string().optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  address: z.string().optional(),
+  user_id: z.string(),
+  isActive: z.boolean().optional(),
 });
 
 export const updatePatientValidation = z.object({
-  body: z.object({
-    name: z.string().min(2).optional(),
-    phone: z.string().min(8).optional(),
-    email: z.string().email().optional(),
-    dob: z.string().optional(),
-    gender: z.enum(["male", "female", "other"]).optional(),
-    address: z.string().optional(),
-    user_id: z.string(),
-    isActive: z.boolean().optional(),
-  }),
+  name: z.string().min(2).optional(),
+  phone: z.string().min(8).optional(),
+  email: z.string().email().optional(),
+  dob: z.string().optional(),
+  gender: z.enum(["male", "female", "other"]).optional(),
+  address: z.string().optional(),
+  user_id: z.string(),
+  isActive: z.boolean().optional(),
 });
 
 export const PatientValidations = {

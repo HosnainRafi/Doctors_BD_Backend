@@ -14,12 +14,22 @@ router.post(
 
 router.get("/", AppointmentController.getAppointments);
 router.get("/:id", AppointmentController.getAppointment);
+
 router.get(
-  "/doctor/:doctor_id/appointments",
+  "/doctor/:doctor_id",
+  authDoctor,
   AppointmentController.getDoctorAppointments
 );
-// appointment.routes.ts
-router.get("/doctor/:doctor_id", AppointmentController.getDoctorAppointments);
+
+router.get(
+  "/registered-doctor/:registered_doctor_id",
+  AppointmentController.getRegisteredDoctorAppointments
+);
+
+router.get(
+  "/earnings/:registered_doctor_id",
+  AppointmentController.getEarnings
+);
 
 router.patch(
   "/:id",
@@ -28,14 +38,7 @@ router.patch(
 );
 
 router.delete("/:id", AppointmentController.deleteAppointment);
-router.get(
-  "/doctor/:doctor_id",
-  authDoctor,
-  AppointmentController.getDoctorAppointments
-);
-router.get(
-  "/registered-doctor/:registered_doctor_id",
-  AppointmentController.getRegisteredDoctorAppointments
-);
+
+router.post("/:id/reminder", AppointmentController.sendReminder);
 
 export const AppointmentRoutes = router;

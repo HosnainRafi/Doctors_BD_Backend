@@ -12,6 +12,7 @@ export interface IRegisteredDoctor {
   isVerified?: boolean;
   isOnline?: boolean;
   availableSlots?: Array<{ date: string; time: string }>;
+  blockedSlots?: Array<{ date: string; time: string }>;
   comparePassword?(password: string): Promise<boolean>;
 
   // Add more fields as needed

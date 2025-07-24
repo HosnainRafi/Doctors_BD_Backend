@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { AppointmentModel } from "./appointment.interface";
+import { number } from "zod";
 
 const appointmentSchema = new Schema<AppointmentModel>(
   {
@@ -17,8 +18,9 @@ const appointmentSchema = new Schema<AppointmentModel>(
       enum: ["pending", "confirmed", "cancelled", "completed"],
       default: "pending",
     },
+    amount: { type: number },
     reason: { type: String },
-    user_id: { type: String },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true, versionKey: false }

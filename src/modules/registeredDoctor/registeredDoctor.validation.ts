@@ -40,6 +40,14 @@ export const updateRegisteredDoctorValidation = z.object({
       })
     )
     .optional(),
+  blockedSlots: z
+    .array(
+      z.object({
+        date: z.string(),
+        time: z.string(),
+      })
+    )
+    .optional(),
 });
 const loginRegisteredDoctorValidation = z.object({
   email: z.string().email(),

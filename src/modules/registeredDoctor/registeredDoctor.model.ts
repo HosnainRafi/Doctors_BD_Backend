@@ -20,6 +20,12 @@ const registeredDoctorSchema = new Schema<RegisteredDoctorModel>(
         time: { type: String },
       },
     ],
+    blockedSlots: [
+      {
+        date: { type: String },
+        time: { type: String },
+      },
+    ],
   },
   { timestamps: true, versionKey: false }
 );

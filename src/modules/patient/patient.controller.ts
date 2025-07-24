@@ -6,8 +6,8 @@ import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
-  const { body } = PatientValidations.createPatientValidation.parse(req);
-  const result = await PatientService.createPatient(body);
+  const newUser = PatientValidations.createPatientValidation.parse(req.body);
+  const result = await PatientService.createPatient(newUser);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -40,8 +40,8 @@ const getPatient = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updatePatient = catchAsync(async (req: Request, res: Response) => {
-  const { body } = PatientValidations.updatePatientValidation.parse(req);
-  const result = await PatientService.updatePatient(req.params.id, body);
+  const newUser = PatientValidations.updatePatientValidation.parse(req.body);
+  const result = await PatientService.updatePatient(req.params.id, newUser);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

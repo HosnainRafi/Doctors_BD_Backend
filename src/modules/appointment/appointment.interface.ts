@@ -11,8 +11,9 @@ export interface IAppointment {
   time: string;
   status?: "pending" | "confirmed" | "cancelled" | "completed";
   reason?: string;
-  user_id?: string;
+  user_id: Types.ObjectId | string;
   isActive?: boolean;
+  amount?: number; // e.g. 500 (in BDT)
 }
 
 export interface AppointmentModel extends Document, IAppointment {

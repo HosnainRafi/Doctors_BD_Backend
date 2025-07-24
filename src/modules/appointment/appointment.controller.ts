@@ -5,12 +5,13 @@ import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { sendEmail } from "../../app/utils/sendEmail";
-import { Appointment } from "./appointment.model";
 import { sendWhatsapp } from "../../app/utils/sendWhatsapp";
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    AppointmentValidations.createAppointmentValidation.parse(req);
+  const body = AppointmentValidations.createAppointmentValidation.parse(
+    req.body
+  );
+  // body.user_id is now always present and is a string
   const result = await AppointmentService.createAppointment(body);
 
   // Helper to check if value is a populated object (not string/ObjectId)
@@ -25,11 +26,9 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Populate both doctor types and patient
-  const populated = await Appointment.findById(result._id)
-    .populate("doctor_id")
-    .populate("registered_doctor_id")
-    .populate("patient_id")
-    .lean();
+  const populated = await AppointmentService.getAppointment(
+    result._id as string
+  );
 
   // Prefer registered doctor if present, else directory doctor
   const doctor = populated?.registered_doctor_id || populated?.doctor_id;
@@ -92,6 +91,7 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
     data: populated,
   });
 });
+
 const getAppointments = catchAsync(async (req: Request, res: Response) => {
   const result = await AppointmentService.getAppointments(req.query);
 
@@ -104,7 +104,8 @@ const getAppointments = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAppointment = catchAsync(async (req: Request, res: Response) => {
-  const result = await AppointmentService.getAppointment(req.params.id);
+  const id = req.params.id as string;
+  const result = await AppointmentService.getAppointment(id);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -114,7 +115,6 @@ const getAppointment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// appointment.controller.ts
 const getDoctorAppointments = catchAsync(
   async (req: Request, res: Response) => {
     const { doctor_id } = req.params;
@@ -131,9 +131,27 @@ const getDoctorAppointments = catchAsync(
   }
 );
 
+const getRegisteredDoctorAppointments = catchAsync(
+  async (req: Request, res: Response) => {
+    const { registered_doctor_id } = req.params;
+    const appointments =
+      await AppointmentService.getAppointmentsByRegisteredDoctor(
+        registered_doctor_id
+      );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Appointments for registered doctor retrieved",
+      data: appointments,
+    });
+  }
+);
+
 const updateAppointment = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    AppointmentValidations.updateAppointmentValidation.parse(req);
+  const body = AppointmentValidations.updateAppointmentValidation.parse(
+    req.body
+  );
   const result = await AppointmentService.updateAppointment(
     req.params.id,
     body
@@ -158,23 +176,30 @@ const deleteAppointment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// For registered doctor dashboard
-const getRegisteredDoctorAppointments = catchAsync(
-  async (req: Request, res: Response) => {
-    const { registered_doctor_id } = req.params;
-    const appointments =
-      await AppointmentService.getAppointmentsByRegisteredDoctor(
-        registered_doctor_id
-      );
+const getEarnings = catchAsync(async (req, res) => {
+  const { registered_doctor_id } = req.params;
+  const earnings = await AppointmentService.getEarningsByDoctor(
+    registered_doctor_id
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Earnings retrieved",
+    data: earnings,
+  });
+});
 
-    sendResponse(res, {
-      statusCode: 200,
-      success: true,
-      message: "Appointments for registered doctor retrieved",
-      data: appointments,
-    });
-  }
-);
+const sendReminder = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  await AppointmentService.sendReminder(id);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Reminder sent successfully",
+    data: null,
+  });
+});
 
 export const AppointmentController = {
   createAppointment,
@@ -184,4 +209,6 @@ export const AppointmentController = {
   deleteAppointment,
   getDoctorAppointments,
   getRegisteredDoctorAppointments,
+  getEarnings,
+  sendReminder,
 };
