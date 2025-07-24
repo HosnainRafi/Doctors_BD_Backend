@@ -6,12 +6,13 @@ import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { sendEmail } from "../../app/utils/sendEmail";
 import { sendWhatsapp } from "../../app/utils/sendWhatsapp";
+import { Notification } from "../notifications/notification.model";
+// adjust path
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
   const body = AppointmentValidations.createAppointmentValidation.parse(
     req.body
   );
-  // body.user_id is now always present and is a string
   const result = await AppointmentService.createAppointment(body);
 
   // Helper to check if value is a populated object (not string/ObjectId)
@@ -30,9 +31,18 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
     result._id as string
   );
 
+  if (!populated) {
+    return sendResponse(res, {
+      statusCode: 404,
+      success: false,
+      message: "Appointment not found after creation",
+      data: null,
+    });
+  }
+
   // Prefer registered doctor if present, else directory doctor
-  const doctor = populated?.registered_doctor_id || populated?.doctor_id;
-  const patient = populated?.patient_id as any;
+  const doctor = populated.registered_doctor_id || populated.doctor_id;
+  const patient = populated.patient_id as any;
 
   // Notify doctor (if you have their email)
   if (isPopulated(doctor) && doctor.email) {
@@ -83,6 +93,17 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
       console.error("Failed to send WhatsApp to patient:", err);
     }
   }
+
+  // Create notification for user
+  await Notification.create({
+    user_id: populated.user_id,
+    type: "appointment",
+    message: `Your appointment with Dr. ${
+      isPopulated(doctor) ? doctor.name : doctor
+    } is booked for ${populated?.date} at ${populated?.time}.`,
+    isRead: false,
+    link: `/user/dashboard`,
+  });
 
   sendResponse(res, {
     statusCode: 201,

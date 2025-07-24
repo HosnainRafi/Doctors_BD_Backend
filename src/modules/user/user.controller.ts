@@ -18,6 +18,24 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUser = catchAsync(async (req: Request, res: Response) => {
+  const user = await UserService.getUserById(req.params.id);
+  if (!user) {
+    return sendResponse(res, {
+      statusCode: 404,
+      success: false,
+      message: "User not found",
+      data: null,
+    });
+  }
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User retrieved successfully",
+    data: user,
+  });
+});
+
 const loginUser = catchAsync(async (req: Request, res: Response) => {
   const body = UserValidations.loginUserValidation.parse(req.body);
   const user = await UserService.login(body.email, body.password);
@@ -43,4 +61,5 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 export const UserController = {
   registerUser,
   loginUser,
+  getUser,
 };

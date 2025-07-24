@@ -7,6 +7,8 @@ export const createPatientValidation = z.object({
   dob: z.string().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   address: z.string().optional(),
+  weight: z.string().optional(), // <-- add this
+  chief_complaints: z.array(z.string()).optional(), // <-- add this
   user_id: z.string(),
   isActive: z.boolean().optional(),
 });
@@ -18,6 +20,8 @@ export const updatePatientValidation = z.object({
   dob: z.string().optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   address: z.string().optional(),
+  weight: z.string().optional(), // <-- add this
+  chief_complaints: z.array(z.string()).optional(), // <-- add this
   user_id: z.string(),
   isActive: z.boolean().optional(),
 });

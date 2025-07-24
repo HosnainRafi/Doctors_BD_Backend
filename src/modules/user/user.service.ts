@@ -6,12 +6,11 @@ export const UserService = {
     return await User.create(payload);
   },
 
-  async getUserByEmail(email: string): Promise<IUserDocument | null> {
-    return User.findOne({ email });
-  },
-
   async getUserById(id: string): Promise<IUserDocument | null> {
     return User.findById(id);
+  },
+  async getUserByEmail(email: string): Promise<IUserDocument | null> {
+    return User.findOne({ email });
   },
 
   async login(email: string, password: string): Promise<IUserDocument> {

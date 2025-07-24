@@ -9,7 +9,9 @@ const patientSchema = new Schema<PatientModel>(
     dob: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     address: { type: String },
-    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true }, // <-- required
+    weight: { type: String }, // <-- add this
+    chief_complaints: [{ type: String }], // <-- add this
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true, versionKey: false }

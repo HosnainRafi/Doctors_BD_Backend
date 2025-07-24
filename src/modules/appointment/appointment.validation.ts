@@ -28,7 +28,7 @@ export const updateAppointmentValidation = z.object({
   time: z.string().optional(),
   status: z.enum(["pending", "confirmed", "cancelled", "completed"]).optional(),
   reason: z.string().optional(),
-  user_id: z.string().min(1),
+  user_id: z.string().optional(),
   isActive: z.boolean().optional(),
 });
 

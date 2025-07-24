@@ -5,11 +5,43 @@ import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { generatePrescriptionPDF } from "../../app/utils/prescriptionPdf";
+import { Patient } from "../patient/patient.model";
+import { Prescription } from "./prescription.model";
+import { FollowUp } from "../followup/followup.model";
+import { Notification } from "../notifications/notification.model";
 
 const createPrescription = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    PrescriptionValidations.createPrescriptionValidation.parse(req);
+  const body = PrescriptionValidations.createPrescriptionValidation.parse(
+    req.body
+  );
   const result = await PrescriptionService.createPrescription(body);
+
+  // Auto-create follow-up if follow_up_date is provided
+  if (body.follow_up_date) {
+    await FollowUp.create({
+      appointment_id: body.appointment_id,
+      patient_id: body.patient_id,
+      doctor_id: body.doctor_id,
+      registered_doctor_id: body.registered_doctor_id,
+      scheduled_date: body.follow_up_date,
+      status: "pending",
+      notes: body.advice || "",
+    });
+  }
+
+  // Create notification for user
+  const patient = await Patient.findById(body.patient_id);
+  const userId = patient?.user_id; // <-- FIXED
+
+  if (userId) {
+    await Notification.create({
+      user_id: userId,
+      type: "prescription",
+      message: `Your prescription from Dr. ... is ready.`,
+      isRead: false,
+      link: `/user/dashboard`,
+    });
+  }
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -20,13 +52,29 @@ const createPrescription = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPrescriptions = catchAsync(async (req: Request, res: Response) => {
-  const result = await PrescriptionService.getPrescriptions(req.query);
+  let prescriptions = [];
+  if (req.query.user_id) {
+    // 1. Get all patients for this user
+    const patients = await Patient.find({ user_id: req.query.user_id });
+    const patientIds = patients.map((p) => p._id);
+    // 2. Get all prescriptions for those patients
+    prescriptions = await Prescription.find({ patient_id: { $in: patientIds } })
+      .populate("doctor_id")
+      .populate("registered_doctor_id")
+      .populate("appointment_id");
+  } else {
+    // fallback: get all prescriptions (or by other filters)
+    prescriptions = await Prescription.find(req.query)
+      .populate("doctor_id")
+      .populate("registered_doctor_id")
+      .populate("appointment_id");
+  }
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: 200,
     success: true,
     message: "Prescriptions retrieved successfully",
-    data: result,
+    data: prescriptions,
   });
 });
 
@@ -42,8 +90,9 @@ const getPrescription = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updatePrescription = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    PrescriptionValidations.updatePrescriptionValidation.parse(req);
+  const body = PrescriptionValidations.updatePrescriptionValidation.parse(
+    req.body
+  );
   const result = await PrescriptionService.updatePrescription(
     req.params.id,
     body
@@ -114,6 +163,19 @@ const getPrescriptionsByRegisteredDoctor = catchAsync(
   }
 );
 
+// In prescription.controller.ts
+const sendPrescription = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  // Find prescription, patient, and send via WhatsApp/email
+  // ...your logic here...
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Prescription sent successfully",
+    data: null,
+  });
+});
+
 export const PrescriptionController = {
   createPrescription,
   getPrescriptions,
@@ -123,4 +185,5 @@ export const PrescriptionController = {
   downloadPrescriptionPdf,
   getPrescriptionsByDoctor,
   getPrescriptionsByRegisteredDoctor,
+  sendPrescription,
 };

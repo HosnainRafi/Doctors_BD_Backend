@@ -7,7 +7,9 @@ export interface IPatient {
   dob?: string;
   gender?: "male" | "female" | "other";
   address?: string;
-  user_id: Types.ObjectId | string; // <-- required, links to User
+  weight?: string; // <-- add this
+  chief_complaints?: string[]; // <-- add this
+  user_id: Types.ObjectId | string;
   isActive?: boolean;
 }
 

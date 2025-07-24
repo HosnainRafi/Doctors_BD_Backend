@@ -2,8 +2,9 @@ import { Document, Types } from "mongoose";
 
 export interface IMedicine {
   name: string;
-  dose: string;
-  instructions?: string;
+  timing: string; // <-- new field for ১+০+১
+  duration: string; // <-- new field for 10 days
+  instructions?: string; // <-- for extra instructions
 }
 
 export interface IPrescription {
@@ -16,6 +17,7 @@ export interface IPrescription {
   advice?: string;
   follow_up_date?: string;
   pdf_url?: string;
+  chief_complaints?: string[];
 }
 
 export interface PrescriptionModel extends Document, IPrescription {

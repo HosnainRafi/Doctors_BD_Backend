@@ -4,7 +4,8 @@ import { PrescriptionModel } from "./prescription.interface";
 const medicineSchema = new Schema(
   {
     name: { type: String, required: true },
-    dose: { type: String, required: true },
+    timing: { type: String, required: true }, // <-- add this
+    duration: { type: String, required: true }, // <-- add this
     instructions: { type: String },
   },
   { _id: false }

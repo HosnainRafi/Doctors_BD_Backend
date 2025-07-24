@@ -10,6 +10,7 @@ router.post(
   validateRequest(UserValidations.createUserValidation),
   UserController.registerUser
 );
+router.get("/:id", UserController.getUser);
 
 router.post(
   "/login",

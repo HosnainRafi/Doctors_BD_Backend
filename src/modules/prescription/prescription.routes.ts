@@ -30,4 +30,6 @@ router.get(
   PrescriptionController.getPrescriptionsByRegisteredDoctor
 );
 
+router.post("/:id/send", PrescriptionController.sendPrescription);
+
 export const PrescriptionRoutes = router;
