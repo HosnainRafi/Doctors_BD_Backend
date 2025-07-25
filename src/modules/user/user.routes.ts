@@ -10,6 +10,7 @@ router.post(
   validateRequest(UserValidations.createUserValidation),
   UserController.registerUser
 );
+router.get("/", UserController.getUserByEmail);
 router.get("/:id", UserController.getUser);
 
 router.post(

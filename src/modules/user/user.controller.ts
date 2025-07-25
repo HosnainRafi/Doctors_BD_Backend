@@ -18,6 +18,33 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getUserByEmail = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.query;
+  if (!email) {
+    return sendResponse(res, {
+      statusCode: 400,
+      success: false,
+      message: "Email is required",
+      data: null,
+    });
+  }
+  const user = await UserService.getUserByEmail(email as string);
+  if (!user) {
+    return sendResponse(res, {
+      statusCode: 404,
+      success: false,
+      message: "User not found",
+      data: null,
+    });
+  }
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User retrieved successfully",
+    data: user,
+  });
+});
+
 const getUser = catchAsync(async (req: Request, res: Response) => {
   const user = await UserService.getUserById(req.params.id);
   if (!user) {
@@ -62,4 +89,5 @@ export const UserController = {
   registerUser,
   loginUser,
   getUser,
+  getUserByEmail,
 };

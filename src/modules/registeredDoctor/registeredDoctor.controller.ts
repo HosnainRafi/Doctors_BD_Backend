@@ -44,6 +44,35 @@ const getDoctor = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDoctorByEmail = catchAsync(async (req, res) => {
+  const { email } = req.query;
+  if (!email) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "Email is required",
+      data: null,
+    });
+  }
+  const doctor = await RegisteredDoctorService.getDoctorByEmail(
+    email as string
+  );
+  if (!doctor) {
+    return sendResponse(res, {
+      statusCode: httpStatus.NOT_FOUND,
+      success: false,
+      message: "Doctor not found",
+      data: null,
+    });
+  }
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Doctor retrieved successfully",
+    data: doctor,
+  });
+});
+
 const updateDoctor = catchAsync(async (req: Request, res: Response) => {
   const newUser =
     RegisteredDoctorValidations.updateRegisteredDoctorValidation.parse(
@@ -109,4 +138,5 @@ export const RegisteredDoctorController = {
   updateDoctor,
   deleteDoctor,
   loginDoctor,
+  getDoctorByEmail,
 };

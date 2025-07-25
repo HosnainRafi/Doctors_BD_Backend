@@ -22,6 +22,10 @@ export const RegisteredDoctorService = {
     return RegisteredDoctor.findById(id);
   },
 
+  async getDoctorByEmail(email: string): Promise<RegisteredDoctorModel | null> {
+    return RegisteredDoctor.findOne({ email });
+  },
+
   async updateDoctor(
     id: string,
     payload: Partial<IRegisteredDoctor>
