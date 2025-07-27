@@ -5,6 +5,7 @@ export interface IPatient {
   phone: string;
   email?: string;
   dob?: string;
+  age?: string;
   gender?: "male" | "female" | "other";
   address?: string;
   weight?: string; // <-- add this

@@ -7,6 +7,7 @@ const patientSchema = new Schema<PatientModel>(
     phone: { type: String, required: true, trim: true },
     email: { type: String, trim: true },
     dob: { type: String },
+    age: { type: String },
     gender: { type: String, enum: ["male", "female", "other"] },
     address: { type: String },
     weight: { type: String }, // <-- add this

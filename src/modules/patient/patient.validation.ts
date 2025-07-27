@@ -5,10 +5,11 @@ export const createPatientValidation = z.object({
   phone: z.string().min(8),
   email: z.string().email().optional(),
   dob: z.string().optional(),
+  age: z.string().optional(), // <-- add this
   gender: z.enum(["male", "female", "other"]).optional(),
   address: z.string().optional(),
-  weight: z.string().optional(), // <-- add this
-  chief_complaints: z.array(z.string()).optional(), // <-- add this
+  weight: z.string().optional(),
+  chief_complaints: z.array(z.string()).optional(),
   user_id: z.string(),
   isActive: z.boolean().optional(),
 });
@@ -18,10 +19,11 @@ export const updatePatientValidation = z.object({
   phone: z.string().min(8).optional(),
   email: z.string().email().optional(),
   dob: z.string().optional(),
+  age: z.string().optional(), // <-- add this
   gender: z.enum(["male", "female", "other"]).optional(),
   address: z.string().optional(),
-  weight: z.string().optional(), // <-- add this
-  chief_complaints: z.array(z.string()).optional(), // <-- add this
+  weight: z.string().optional(),
+  chief_complaints: z.array(z.string()).optional(),
   user_id: z.string(),
   isActive: z.boolean().optional(),
 });
