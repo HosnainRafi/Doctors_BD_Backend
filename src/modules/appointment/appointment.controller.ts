@@ -5,7 +5,6 @@ import catchAsync from "../../shared/catchAsync";
 import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { sendEmail } from "../../app/utils/sendEmail";
-import { sendWhatsapp } from "../../app/utils/sendWhatsapp";
 import { Notification } from "../notifications/notification.model";
 // adjust path
 
@@ -67,32 +66,32 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Notify doctor (WhatsApp)
-  if (isPopulated(doctor) && doctor.phone) {
-    try {
-      await sendWhatsapp(
-        doctor.phone,
-        `New appointment with patient ${
-          isPopulated(patient) ? patient.name : patient
-        } on ${populated?.date} at ${populated?.time}.`
-      );
-    } catch (err) {
-      console.error("Failed to send WhatsApp to doctor:", err);
-    }
-  }
+  // if (isPopulated(doctor) && doctor.phone) {
+  //   try {
+  //     await sendWhatsapp(
+  //       doctor.phone,
+  //       `New appointment with patient ${
+  //         isPopulated(patient) ? patient.name : patient
+  //       } on ${populated?.date} at ${populated?.time}.`
+  //     );
+  //   } catch (err) {
+  //     console.error("Failed to send WhatsApp to doctor:", err);
+  //   }
+  // }
 
   // Notify patient (WhatsApp)
-  if (isPopulated(patient) && patient.phone) {
-    try {
-      await sendWhatsapp(
-        patient.phone,
-        `Your appointment with Dr. ${
-          isPopulated(doctor) ? doctor.name : doctor
-        } is booked for ${populated?.date} at ${populated?.time}.`
-      );
-    } catch (err) {
-      console.error("Failed to send WhatsApp to patient:", err);
-    }
-  }
+  // if (isPopulated(patient) && patient.phone) {
+  //   try {
+  //     await sendWhatsapp(
+  //       patient.phone,
+  //       `Your appointment with Dr. ${
+  //         isPopulated(doctor) ? doctor.name : doctor
+  //       } is booked for ${populated?.date} at ${populated?.time}.`
+  //     );
+  //   } catch (err) {
+  //     console.error("Failed to send WhatsApp to patient:", err);
+  //   }
+  // }
 
   // Create notification for user
   await Notification.create({
@@ -211,6 +210,7 @@ const getEarnings = catchAsync(async (req, res) => {
 });
 
 const sendReminder = catchAsync(async (req: Request, res: Response) => {
+  console.log(req.params);
   const { id } = req.params;
   await AppointmentService.sendReminder(id);
 

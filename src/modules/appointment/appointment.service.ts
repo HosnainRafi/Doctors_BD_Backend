@@ -2,7 +2,6 @@ import { Appointment } from "./appointment.model";
 import { IAppointment, AppointmentModel } from "./appointment.interface";
 import mongoose, { FilterQuery } from "mongoose";
 import { sendEmail } from "../../app/utils/sendEmail";
-import { sendWhatsapp } from "../../app/utils/sendWhatsapp";
 
 export const AppointmentService = {
   async createAppointment(payload: IAppointment): Promise<AppointmentModel> {
@@ -81,14 +80,14 @@ export const AppointmentService = {
       appointment.doctor_id) as any;
 
     // WhatsApp reminder
-    if (patient && patient.phone) {
-      await sendWhatsapp(
-        patient.phone,
-        `Reminder: You have an appointment with Dr. ${
-          doctor?.name || doctor?._id
-        } on ${appointment.date} at ${appointment.time}.`
-      );
-    }
+    // if (patient && patient.phone) {
+    //   await sendWhatsapp(
+    //     patient.phone,
+    //     `Reminder: You have an appointment with Dr. ${
+    //       doctor?.name || doctor?._id
+    //     } on ${appointment.date} at ${appointment.time}.`
+    //   );
+    // }
 
     // Email reminder (optional)
     if (patient && patient.email) {

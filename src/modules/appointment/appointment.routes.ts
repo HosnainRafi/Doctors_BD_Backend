@@ -13,6 +13,7 @@ router.post(
 );
 
 router.get("/", AppointmentController.getAppointments);
+router.post("/:id/reminder", AppointmentController.sendReminder);
 router.get("/:id", AppointmentController.getAppointment);
 
 router.get(
@@ -38,7 +39,5 @@ router.patch(
 );
 
 router.delete("/:id", AppointmentController.deleteAppointment);
-
-router.post("/:id/reminder", AppointmentController.sendReminder);
 
 export const AppointmentRoutes = router;
