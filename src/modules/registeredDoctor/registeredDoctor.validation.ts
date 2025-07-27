@@ -71,7 +71,7 @@ export const createRegisteredDoctorValidation = z.object({
     )
     .optional(),
   no_of_patients_served: z.number().optional(),
-  profileCompleted: z.boolean(),
+  profileCompleted: z.boolean().default(false),
   review: z
     .object({
       average_rating: z.number(),
