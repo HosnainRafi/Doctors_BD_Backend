@@ -11,6 +11,7 @@ import { RegisteredDoctorRoutes } from "../../modules/registeredDoctor/registere
 import { UserRoutes } from "../../modules/user/user.routes";
 import { ReviewRoutes } from "../../modules/review/review.routes";
 import { NotificationRoutes } from "../../modules/notifications/notification.routes";
+import { MedexRoutes } from "../../modules/medex/medex.routes";
 
 const router = Router();
 
@@ -26,6 +27,10 @@ const moduleRoutes = [
   {
     path: "/districts",
     route: DistrictRoutes,
+  },
+  {
+    path: "/medex",
+    route: MedexRoutes,
   },
   {
     path: "/specialtyCategory",
