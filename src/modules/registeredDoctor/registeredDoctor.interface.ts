@@ -58,6 +58,7 @@ export interface IRegisteredDoctor {
     total_reviews: number;
   };
   comparePassword?(password: string): Promise<boolean>;
+  profileCompleted: boolean;
 }
 
 export interface RegisteredDoctorModel extends Document, IRegisteredDoctor {

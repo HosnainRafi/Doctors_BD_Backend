@@ -79,6 +79,7 @@ const registeredDoctorSchema = new Schema<RegisteredDoctorModel>(
       average_rating: Number,
       total_reviews: Number,
     },
+    profileCompleted: { type: Boolean, default: false },
   },
   { timestamps: true, versionKey: false }
 );
