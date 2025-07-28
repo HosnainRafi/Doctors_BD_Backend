@@ -1,6 +1,5 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import puppeteer from "puppeteer";
 
 export const MedexService = {
   async searchMedicine(query: string) {
@@ -42,97 +41,101 @@ export const MedexService = {
     }
   },
 
-  async getMedicineDetails(url: string) {
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle2" });
+  async getMedicineDetails(url: any) {
+    try {
+      const { data: html } = await axios.get(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+          "Accept-Language": "en-US,en;q=0.9",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          Referer: "https://medex.com.bd/",
+        },
+      });
 
-    // Wait for the main content to load
-    await page
-      .waitForSelector(".brand-header h1", { timeout: 5000 })
-      .catch(() => {});
+      const $ = cheerio.load(html);
 
-    const data = await page.evaluate(() => {
-      // Helper to get text
-      const getText = (selector: string) =>
-        document.querySelector(selector)?.textContent?.trim() || "";
+      // Name
+      const name = $(".brand-header h1").text().trim();
 
-      // Extract info block
-      const infoDivs = document.querySelectorAll(
-        ".brand-info-block > div[title]"
-      );
+      // Info block
       let genericName = "";
       let genericNameLink = "";
       let strength = "";
       let manufacturer = "";
       let manufacturerLink = "";
 
-      infoDivs.forEach((div) => {
-        const title = div.getAttribute("title")?.trim();
+      $(".brand-info-block > div[title]").each((i, el) => {
+        const title = $(el).attr("title")?.trim();
         if (!title) return;
         if (title === "Generic Name") {
-          const link = div.querySelector("a");
-          genericName = link?.textContent?.trim() || "";
-          genericNameLink = link?.getAttribute("href") || "";
+          const link = $(el).find("a");
+          genericName = link.text().trim();
+          genericNameLink = link.attr("href") || "";
         }
         if (title === "Strength") {
           // Only get text nodes, ignore nested divs
-          strength = Array.from(div.childNodes)
-            .filter((n) => n.nodeType === Node.TEXT_NODE)
-            .map((n) => n.textContent?.trim())
-            .join(" ")
+          strength = $(el)
+            .contents()
+            .filter(function () {
+              return this.type === "text";
+            })
+            .text()
             .trim();
         }
         if (title === "Manufactured by") {
-          const link = div.querySelector("a");
-          manufacturer = link?.textContent?.trim() || "";
-          manufacturerLink = link?.getAttribute("href") || "";
+          const link = $(el).find("a");
+          manufacturer = link.text().trim();
+          manufacturerLink = link.attr("href") || "";
         }
       });
 
-      // Get composition table
+      // Composition table
       let composition = "";
-      const compRows = document.querySelectorAll(".composition-table tbody tr");
-      compRows.forEach((row) => {
-        const tds = row.querySelectorAll("td");
+      $(".composition-table tbody tr").each((i, row) => {
+        const tds = $(row).find("td");
         if (tds.length >= 2) {
-          composition += `• ${tds[0].textContent?.trim() || ""} - ${
-            tds[1].textContent?.trim() || ""
-          }\n`;
+          const left = $(tds[0]).text().trim();
+          const right = $(tds[1]).text().trim();
+          if (left || right) {
+            composition += `• ${left} - ${right}\n`;
+          }
         }
       });
 
-      // Get price and pack info
+      // Price and pack info
       let unitPrice = "";
       let stripPrice = "";
       let packInfo = "";
-      const packageDiv = document.querySelector(".package-container");
-      if (packageDiv) {
-        const spans = packageDiv.querySelectorAll("span");
-        for (let i = 0; i < spans.length; i++) {
-          if (spans[i].textContent?.includes("Unit Price")) {
-            unitPrice = spans[i + 1]?.textContent?.trim() || "";
+      const packageDiv = $(".package-container");
+      if (packageDiv.length) {
+        packageDiv.find("span").each((i, span) => {
+          const text = $(span).text();
+          if (text.includes("Unit Price")) {
+            unitPrice = $(span).next().text().trim();
           }
-          if (spans[i].classList.contains("pack-size-info")) {
-            packInfo = spans[i].textContent?.trim() || "";
+          if ($(span).hasClass("pack-size-info")) {
+            packInfo = text.trim();
           }
-        }
-        const divs = packageDiv.querySelectorAll("div");
-        divs.forEach((div) => {
-          if (div.textContent?.includes("Strip Price")) {
-            const priceSpans = div.querySelectorAll("span");
+        });
+        packageDiv.find("div").each((i, div) => {
+          const text = $(div).text();
+          if (text.includes("Strip Price")) {
+            const priceSpans = $(div).find("span");
             if (priceSpans.length) {
-              stripPrice =
-                priceSpans[priceSpans.length - 1].textContent?.trim() || "";
+              stripPrice = $(priceSpans[priceSpans.length - 1])
+                .text()
+                .trim();
             }
           }
         });
       }
 
-      // All sections you want
+      // Sections
       const sections = [
         "indications",
         "composition",
+        "pharmacology",
         "mode_of_action",
         "dosage",
         "interaction",
@@ -145,19 +148,20 @@ export const MedexService = {
         "storage_conditions",
         "commonly_asked_questions",
       ];
-      const sectionData: Record<string, string> = {};
+      const sectionData: any = {};
       sections.forEach((sec) => {
-        const header = document.querySelector(`div#${sec}`);
-        if (header) {
-          const body = header.nextElementSibling;
-          if (body && body.classList.contains("ac-body")) {
-            sectionData[sec] = body.textContent?.trim() || "";
+        const header = $(`div#${sec}`);
+        console.log(`Checking section: ${sec}, found:`, header.length);
+        if (header.length) {
+          const body = header.next();
+          if (body.hasClass("ac-body")) {
+            sectionData[sec] = body.text().trim();
           }
         }
       });
 
       return {
-        name: getText(".brand-header h1"),
+        name,
         genericName,
         genericNameLink,
         strength,
@@ -168,11 +172,11 @@ export const MedexService = {
         stripPrice,
         packInfo,
         ...sectionData,
-        url: window.location.href,
+        url,
       };
-    });
-
-    await browser.close();
-    return data;
+    } catch (error) {
+      console.error("Error scraping Medex details:", error);
+      return null;
+    }
   },
 };
