@@ -60,16 +60,17 @@ const getPrescriptions = catchAsync(async (req: Request, res: Response) => {
     // 2. Get all prescriptions for those patients
     prescriptions = await Prescription.find({ patient_id: { $in: patientIds } })
       .populate("doctor_id")
-      .populate("registered_doctor_id")
+      .populate("registered_doctor_id") // Add this line
+      .populate("patient_id")
       .populate("appointment_id");
   } else {
     // fallback: get all prescriptions (or by other filters)
     prescriptions = await Prescription.find(req.query)
       .populate("doctor_id")
-      .populate("registered_doctor_id")
+      .populate("registered_doctor_id") // Add this line
+      .populate("patient_id")
       .populate("appointment_id");
   }
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -119,6 +120,7 @@ const deletePrescription = catchAsync(async (req: Request, res: Response) => {
 
 const downloadPrescriptionPdf = catchAsync(
   async (req: Request, res: Response) => {
+    // Use the updated getPrescription method which now populates registered_doctor_id
     const prescription = await PrescriptionService.getPrescription(
       req.params.id
     );

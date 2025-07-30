@@ -13,6 +13,7 @@ export const PrescriptionService = {
     return await Prescription.find(filters)
       .populate("doctor_id")
       .populate("patient_id")
+      .populate("registered_doctor_id")
       .populate("appointment_id");
   },
 
@@ -20,6 +21,7 @@ export const PrescriptionService = {
     return Prescription.findById(id)
       .populate("doctor_id")
       .populate("patient_id")
+      .populate("registered_doctor_id")
       .populate("appointment_id");
   },
 
@@ -37,6 +39,7 @@ export const PrescriptionService = {
     return Prescription.find({ doctor_id })
       .populate("patient_id")
       .populate("appointment_id")
+      .populate("registered_doctor_id")
       .sort({ date: -1 });
   },
 
@@ -44,6 +47,7 @@ export const PrescriptionService = {
     return Prescription.find({ registered_doctor_id })
       .populate("patient_id")
       .populate("appointment_id")
+      .populate("registered_doctor_id")
       .sort({ date: -1 });
   },
 };
