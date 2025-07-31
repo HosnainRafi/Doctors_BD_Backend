@@ -9,6 +9,7 @@ import { Patient } from "../patient/patient.model";
 import { Prescription } from "./prescription.model";
 import { FollowUp } from "../followup/followup.model";
 import { Notification } from "../notifications/notification.model";
+import { RegisteredDoctor } from "../registeredDoctor/registeredDoctor.model";
 
 const createPrescription = catchAsync(async (req: Request, res: Response) => {
   const body = PrescriptionValidations.createPrescriptionValidation.parse(
@@ -31,13 +32,30 @@ const createPrescription = catchAsync(async (req: Request, res: Response) => {
 
   // Create notification for user
   const patient = await Patient.findById(body.patient_id);
-  const userId = patient?.user_id; // <-- FIXED
+  const userId = patient?.user_id;
 
   if (userId) {
+    let doctorName = "";
+
+    // Fetch doctor name if doctor_id exists
+    if (body.doctor_id) {
+      const doctor = await RegisteredDoctor.findById(body.doctor_id).select(
+        "name"
+      );
+      doctorName = doctor?.name || "";
+    }
+    // Fetch registered doctor name if registered_doctor_id exists
+    else if (body.registered_doctor_id) {
+      const registeredDoctor = await RegisteredDoctor.findById(
+        body.registered_doctor_id
+      ).select("name");
+      doctorName = registeredDoctor?.name || "";
+    }
+
     await Notification.create({
       user_id: userId,
       type: "prescription",
-      message: `Your prescription from Dr. ... is ready.`,
+      message: `Your prescription from Dr. ${doctorName} is ready.`,
       isRead: false,
       link: `/user/dashboard`,
     });
