@@ -1,36 +1,29 @@
 // src/modules/transaction/transaction.routes.ts
-
 import { Router } from "express";
-import { validateRequest } from "../../middlewares/validateRequest";
-import { TransactionValidations } from "./transaction.validation";
 import { TransactionController } from "./transaction.controller";
 
 const router = Router();
 
+// Initiate payment
 router.post("/initiate/:id", TransactionController.initiatePayment);
 
-router.patch(
-  "/appointment/:id/status",
-  validateRequest(TransactionValidations.appointmentStatusUpdateValidation),
-  TransactionController.updateAppointmentStatusAfterPayment
-);
-
-// FIXED: Changed from GET to POST to match SSLCommerz's callback method
+// SSLCommerz callbacks (handle both GET and POST)
+router.get("/success", TransactionController.paymentSuccess);
 router.post("/success", TransactionController.paymentSuccess);
+
+router.get("/fail", TransactionController.paymentFail);
 router.post("/fail", TransactionController.paymentFail);
+
+router.get("/cancel", TransactionController.paymentCancel);
 router.post("/cancel", TransactionController.paymentCancel);
 
-// IPN is already correct
+// IPN (server-to-server callback)
 router.post("/ipn", TransactionController.paymentIpn);
 
-// These routes are for your frontend to fetch data, so they remain GET
+// Other routes
 router.get(
   "/transaction/:tran_id",
   TransactionController.getTransactionByTranId
-);
-router.get(
-  "/appointment-by-tran_id/:tran_id",
-  TransactionController.getAppointmentByTranId
 );
 
 export const TransactionRoutes = router;
