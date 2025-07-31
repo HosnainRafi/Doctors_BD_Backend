@@ -1,3 +1,4 @@
+// src/modules/transaction/transaction.model.ts
 import { Schema, model, Types, Document } from "mongoose";
 import { ITransaction } from "./transaction.interface";
 

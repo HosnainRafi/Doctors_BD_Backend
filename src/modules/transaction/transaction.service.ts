@@ -166,6 +166,14 @@ export const TransactionService = {
   },
 
   async getTransactionByTranId(tran_id: string) {
-    return Transaction.findOne({ tran_id });
+    return Transaction.findOne({ tran_id }).populate({
+      path: "appointment_id",
+      populate: [
+        { path: "patient_id" },
+        { path: "doctor_id" },
+        { path: "registered_doctor_id" },
+        { path: "chamber_id" },
+      ],
+    });
   },
 };

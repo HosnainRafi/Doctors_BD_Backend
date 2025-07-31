@@ -199,6 +199,32 @@ const getTransactionByTranId = catchAsync(
   }
 );
 
+// src/modules/transaction/transaction.controller.ts
+const getTransactionWithAppointment = catchAsync(
+  async (req: Request, res: Response) => {
+    const { tran_id } = req.params;
+    const transaction = await TransactionService.getTransactionByTranId(
+      tran_id
+    );
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found",
+        data: null,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Transaction retrieved successfully",
+      data: transaction,
+    });
+  }
+);
+
+// Add to TransactionController exports
+
 export const TransactionController = {
   initiatePayment: catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
@@ -210,9 +236,11 @@ export const TransactionController = {
       data: result,
     });
   }),
+
   paymentSuccess,
   paymentFail,
   paymentCancel,
   paymentIpn,
   getTransactionByTranId,
+  getTransactionWithAppointment,
 };

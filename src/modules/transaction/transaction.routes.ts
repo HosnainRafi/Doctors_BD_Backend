@@ -19,7 +19,10 @@ router.post("/cancel", TransactionController.paymentCancel);
 
 // IPN (server-to-server callback)
 router.post("/ipn", TransactionController.paymentIpn);
-
+router.get(
+  "/transaction-with-appointment/:tran_id",
+  TransactionController.getTransactionWithAppointment
+);
 // Other routes
 router.get(
   "/transaction/:tran_id",
