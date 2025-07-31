@@ -29,19 +29,23 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
 });
 
 const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
-  const { tran_id } = req.query;
+  // FIXED: Read from req.body instead of req.query
+  const { tran_id } = req.body;
+
   if (!tran_id) {
+    // Redirect to a failure page if the transaction ID is missing from the callback
     return res.redirect(
       `${SSLCommerzConfig.frontend_fail_url}?error=missing_transaction_id`
     );
   }
 
   try {
+    // This part remains the same
     await TransactionService.updateTransactionStatus(
       tran_id as string,
       "completed"
     );
-    // Redirect to the frontend success page with the transaction ID
+    // This redirect is correct. It constructs a GET URL for your frontend.
     res.redirect(`${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}`);
   } catch (error) {
     console.error("Payment success processing error:", error);
@@ -52,7 +56,9 @@ const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
 });
 
 const paymentFail = catchAsync(async (req: Request, res: Response) => {
-  const { tran_id } = req.query;
+  // FIXED: Read from req.body instead of req.query
+  const { tran_id } = req.body;
+
   if (!tran_id) {
     return res.redirect(
       `${SSLCommerzConfig.frontend_fail_url}?error=missing_transaction_id`
@@ -64,11 +70,9 @@ const paymentFail = catchAsync(async (req: Request, res: Response) => {
       tran_id as string,
       "failed"
     );
-    // FIXED: Pass tran_id to the frontend fail URL
     res.redirect(`${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}`);
   } catch (error) {
     console.error("Payment fail processing error:", error);
-    // Still redirect, but maybe log the error more seriously
     res.redirect(
       `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&error=processing_failed`
     );
@@ -76,7 +80,9 @@ const paymentFail = catchAsync(async (req: Request, res: Response) => {
 });
 
 const paymentCancel = catchAsync(async (req: Request, res: Response) => {
-  const { tran_id } = req.query;
+  // FIXED: Read from req.body instead of req.query
+  const { tran_id } = req.body;
+
   if (!tran_id) {
     return res.redirect(
       `${SSLCommerzConfig.frontend_cancel_url}?error=missing_transaction_id`
@@ -88,7 +94,6 @@ const paymentCancel = catchAsync(async (req: Request, res: Response) => {
       tran_id as string,
       "cancelled"
     );
-    // FIXED: Pass tran_id to the frontend cancel URL
     res.redirect(`${SSLCommerzConfig.frontend_cancel_url}?tran_id=${tran_id}`);
   } catch (error) {
     console.error("Payment cancel processing error:", error);
