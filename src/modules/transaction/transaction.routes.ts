@@ -25,5 +25,9 @@ router.get(
   "/transaction/:tran_id",
   TransactionController.getTransactionByTranId
 );
+router.get(
+  "/appointment-by-tran_id/:tran_id",
+  TransactionController.getAppointmentByTranId
+);
 
 export const TransactionRoutes = router;

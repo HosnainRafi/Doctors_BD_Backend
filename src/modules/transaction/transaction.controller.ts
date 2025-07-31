@@ -5,6 +5,7 @@ import sendResponse from "../../shared/sendResponse";
 import httpStatus from "http-status";
 import { SSLCommerzConfig } from "../../config/sslcommerz";
 import { AppointmentService } from "../appointment/appointment.service";
+import { Appointment } from "../appointment/appointment.model";
 
 const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -29,50 +30,71 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
 
 const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
   const { tran_id } = req.query;
+  if (!tran_id) {
+    return res.redirect(
+      `${SSLCommerzConfig.frontend_fail_url}?error=missing_transaction_id`
+    );
+  }
+
   try {
     await TransactionService.updateTransactionStatus(
       tran_id as string,
       "completed"
     );
-    // Always add status param for frontend
-    res.redirect(
-      `${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}&status=success`
-    );
+    // Redirect to the frontend success page with the transaction ID
+    res.redirect(`${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}`);
   } catch (error) {
-    console.error("Payment success error:", error);
+    console.error("Payment success processing error:", error);
     res.redirect(
-      `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&status=failed`
+      `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&error=processing_failed`
     );
   }
 });
 
 const paymentFail = catchAsync(async (req: Request, res: Response) => {
   const { tran_id } = req.query;
+  if (!tran_id) {
+    return res.redirect(
+      `${SSLCommerzConfig.frontend_fail_url}?error=missing_transaction_id`
+    );
+  }
 
   try {
     await TransactionService.updateTransactionStatus(
       tran_id as string,
       "failed"
     );
-    res.redirect(SSLCommerzConfig.frontend_fail_url);
+    // FIXED: Pass tran_id to the frontend fail URL
+    res.redirect(`${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}`);
   } catch (error) {
-    console.error("Payment fail error:", error);
-    res.redirect(SSLCommerzConfig.frontend_fail_url);
+    console.error("Payment fail processing error:", error);
+    // Still redirect, but maybe log the error more seriously
+    res.redirect(
+      `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&error=processing_failed`
+    );
   }
 });
 
 const paymentCancel = catchAsync(async (req: Request, res: Response) => {
   const { tran_id } = req.query;
+  if (!tran_id) {
+    return res.redirect(
+      `${SSLCommerzConfig.frontend_cancel_url}?error=missing_transaction_id`
+    );
+  }
 
   try {
     await TransactionService.updateTransactionStatus(
       tran_id as string,
       "cancelled"
     );
-    res.redirect(SSLCommerzConfig.frontend_cancel_url);
+    // FIXED: Pass tran_id to the frontend cancel URL
+    res.redirect(`${SSLCommerzConfig.frontend_cancel_url}?tran_id=${tran_id}`);
   } catch (error) {
-    console.error("Payment cancel error:", error);
-    res.redirect(SSLCommerzConfig.frontend_cancel_url);
+    console.error("Payment cancel processing error:", error);
+    res.redirect(
+      `${SSLCommerzConfig.frontend_cancel_url}?tran_id=${tran_id}&error=processing_failed`
+    );
   }
 });
 
@@ -153,6 +175,45 @@ const getTransactionByTranId = catchAsync(
   }
 );
 
+const getAppointmentByTranId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { tran_id } = req.params;
+
+    const transaction = await TransactionService.getTransactionByTranId(
+      tran_id
+    );
+    if (!transaction) {
+      return sendResponse(res, {
+        statusCode: httpStatus.NOT_FOUND,
+        success: false,
+        message: "Transaction not found",
+        data: null,
+      });
+    }
+
+    // Now fetch the fully populated appointment
+    const appointment = await Appointment.findById(transaction.appointment_id)
+      .populate("patient_id")
+      .populate("registered_doctor_id"); // Populate all necessary fields
+
+    if (!appointment) {
+      return sendResponse(res, {
+        statusCode: httpStatus.NOT_FOUND,
+        success: false,
+        message: "Associated appointment not found",
+        data: null,
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Appointment retrieved successfully",
+      data: appointment,
+    });
+  }
+);
+
 export const TransactionController = {
   initiatePayment,
   paymentSuccess,
@@ -161,4 +222,5 @@ export const TransactionController = {
   paymentIpn,
   updateAppointmentStatusAfterPayment,
   getTransactionByTranId,
+  getAppointmentByTranId,
 };
