@@ -8,7 +8,7 @@ export const SSLCommerzConfig = {
   fail_url: `${process.env.BACKEND_URL}/api/v1/payment/fail`,
   cancel_url: `${process.env.BACKEND_URL}/api/v1/payment/cancel`,
   ipn_url: `${process.env.BACKEND_URL}/api/v1/payment/ipn`,
-  frontend_success_url: `${process.env.FRONTEND_URL}/dashboard/user/appointment?payment=success`,
-  frontend_fail_url: `${process.env.FRONTEND_URL}/dashboard/user/appointment?payment=fail`,
-  frontend_cancel_url: `${process.env.FRONTEND_URL}/dashboard/user/appointment?payment=cancel`,
+  frontend_success_url: "https://doctors-bd-frontend.vercel.app/success",
+  frontend_fail_url: "https://doctors-bd-frontend.vercel.app/fail",
+  frontend_cancel_url: "https://doctors-bd-frontend.vercel.app/cancel",
 };

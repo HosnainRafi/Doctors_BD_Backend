@@ -29,16 +29,16 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
 
 const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
   const { tran_id } = req.query;
-
   try {
     await TransactionService.updateTransactionStatus(
       tran_id as string,
       "completed"
     );
-    res.redirect(SSLCommerzConfig.frontend_success_url);
+    // Add transaction ID to redirect URL
+    res.redirect(`${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}`);
   } catch (error) {
     console.error("Payment success error:", error);
-    res.redirect(SSLCommerzConfig.frontend_fail_url);
+    res.redirect(`${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}`);
   }
 });
 
@@ -124,6 +124,31 @@ const updateAppointmentStatusAfterPayment = catchAsync(
   }
 );
 
+const getTransactionByTranId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { tran_id } = req.params;
+    const transaction = await TransactionService.getTransactionByTranId(
+      tran_id
+    );
+
+    if (!transaction) {
+      return sendResponse(res, {
+        statusCode: httpStatus.NOT_FOUND,
+        success: false,
+        message: "Transaction not found",
+        data: null,
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Transaction retrieved successfully",
+      data: transaction,
+    });
+  }
+);
+
 export const TransactionController = {
   initiatePayment,
   paymentSuccess,
@@ -131,4 +156,5 @@ export const TransactionController = {
   paymentCancel,
   paymentIpn,
   updateAppointmentStatusAfterPayment,
+  getTransactionByTranId,
 };

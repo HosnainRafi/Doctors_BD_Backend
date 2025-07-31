@@ -21,5 +21,9 @@ router.get("/cancel", TransactionController.paymentCancel);
 // Note: It's good practice to validate the IPN route as well.
 // You could create a specific validation schema for it.
 router.post("/ipn", TransactionController.paymentIpn);
+router.get(
+  "/transaction/:tran_id",
+  TransactionController.getTransactionByTranId
+);
 
 export const TransactionRoutes = router;
