@@ -34,11 +34,15 @@ const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
       tran_id as string,
       "completed"
     );
-    // Add transaction ID to redirect URL
-    res.redirect(`${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}`);
+    // Always add status param for frontend
+    res.redirect(
+      `${SSLCommerzConfig.frontend_success_url}?tran_id=${tran_id}&status=success`
+    );
   } catch (error) {
     console.error("Payment success error:", error);
-    res.redirect(`${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}`);
+    res.redirect(
+      `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&status=failed`
+    );
   }
 });
 
