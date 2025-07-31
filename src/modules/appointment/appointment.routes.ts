@@ -12,9 +12,18 @@ router.post(
   AppointmentController.createAppointment
 );
 
+router.patch(
+  "/:id/status",
+  validateRequest(AppointmentValidations.updateAppointmentValidation),
+  AppointmentController.updateAppointmentStatus
+);
+
 router.get("/", AppointmentController.getAppointments);
 router.post("/:id/reminder", AppointmentController.sendReminder);
 router.get("/:id", AppointmentController.getAppointment);
+
+// New route for updating appointment status after payment
+router.patch("/:id/status", AppointmentController.updateAppointmentStatus);
 
 router.get(
   "/doctor/:doctor_id",

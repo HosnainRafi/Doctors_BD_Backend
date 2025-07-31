@@ -9,7 +9,12 @@ export interface IAppointment {
   chamber_id?: Types.ObjectId | string;
   date: string;
   time: string;
-  status?: "pending" | "confirmed" | "cancelled" | "completed";
+  status?:
+    | "pending"
+    | "confirmed"
+    | "cancelled"
+    | "completed"
+    | "pending_payment";
   reason?: string;
   user_id: Types.ObjectId | string;
   isActive?: boolean;

@@ -9,7 +9,13 @@ export const createAppointmentValidation = z
     date: z.string().min(8),
     time: z.string().min(4),
     status: z
-      .enum(["pending", "confirmed", "cancelled", "completed"])
+      .enum([
+        "pending",
+        "confirmed",
+        "cancelled",
+        "completed",
+        "pending_payment",
+      ])
       .optional(),
     reason: z.string().optional(),
     user_id: z.string().min(1),
@@ -26,7 +32,9 @@ export const updateAppointmentValidation = z.object({
   chamber_id: z.string().optional(),
   date: z.string().optional(),
   time: z.string().optional(),
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]).optional(),
+  status: z
+    .enum(["pending", "confirmed", "cancelled", "completed", "pending_payment"])
+    .optional(),
   reason: z.string().optional(),
   user_id: z.string().optional(),
   isActive: z.boolean().optional(),

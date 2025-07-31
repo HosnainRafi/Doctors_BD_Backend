@@ -5,6 +5,10 @@ import { sendEmail } from "../../app/utils/sendEmail";
 
 export const AppointmentService = {
   async createAppointment(payload: IAppointment): Promise<AppointmentModel> {
+    // Set status to pending_payment if not provided
+    if (!payload.status) {
+      payload.status = "pending_payment";
+    }
     return await Appointment.create(payload);
   },
 
@@ -79,16 +83,6 @@ export const AppointmentService = {
     const doctor = (appointment.registered_doctor_id ||
       appointment.doctor_id) as any;
 
-    // WhatsApp reminder
-    // if (patient && patient.phone) {
-    //   await sendWhatsapp(
-    //     patient.phone,
-    //     `Reminder: You have an appointment with Dr. ${
-    //       doctor?.name || doctor?._id
-    //     } on ${appointment.date} at ${appointment.time}.`
-    //   );
-    // }
-
     // Email reminder (optional)
     if (patient && patient.email) {
       await sendEmail(
@@ -101,5 +95,17 @@ export const AppointmentService = {
     }
 
     return { success: true };
+  },
+
+  // New method to update appointment status after payment
+  async updateAppointmentStatusAfterPayment(
+    appointmentId: string,
+    status: "confirmed" | "cancelled"
+  ): Promise<AppointmentModel | null> {
+    return Appointment.findByIdAndUpdate(
+      appointmentId,
+      { status },
+      { new: true }
+    );
   },
 };

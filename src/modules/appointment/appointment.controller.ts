@@ -12,6 +12,10 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   const body = AppointmentValidations.createAppointmentValidation.parse(
     req.body
   );
+
+  // Set status to pending_payment for new appointments
+  body.status = "pending_payment";
+
   const result = await AppointmentService.createAppointment(body);
 
   // Helper to check if value is a populated object (not string/ObjectId)
@@ -47,10 +51,10 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   if (isPopulated(doctor) && doctor.email) {
     await sendEmail(
       doctor.email,
-      "New Appointment Booked",
+      "New Appointment Booked (Payment Pending)",
       `You have a new appointment with patient ${
         patient?.name || (isPopulated(patient) ? patient._id : patient)
-      } on ${populated?.date} at ${populated?.time}.`
+      } on ${populated?.date} at ${populated?.time}. Payment is pending.`
     );
   }
 
@@ -58,40 +62,14 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   if (isPopulated(patient) && patient.email) {
     await sendEmail(
       patient.email,
-      "Appointment Confirmation",
+      "Appointment Confirmation (Payment Pending)",
       `Your appointment with Dr. ${
         isPopulated(doctor) ? doctor.name : doctor
-      } is booked for ${populated?.date} at ${populated?.time}.`
+      } is booked for ${populated?.date} at ${
+        populated?.time
+      }. Please complete the payment to confirm.`
     );
   }
-
-  // Notify doctor (WhatsApp)
-  // if (isPopulated(doctor) && doctor.phone) {
-  //   try {
-  //     await sendWhatsapp(
-  //       doctor.phone,
-  //       `New appointment with patient ${
-  //         isPopulated(patient) ? patient.name : patient
-  //       } on ${populated?.date} at ${populated?.time}.`
-  //     );
-  //   } catch (err) {
-  //     console.error("Failed to send WhatsApp to doctor:", err);
-  //   }
-  // }
-
-  // Notify patient (WhatsApp)
-  // if (isPopulated(patient) && patient.phone) {
-  //   try {
-  //     await sendWhatsapp(
-  //       patient.phone,
-  //       `Your appointment with Dr. ${
-  //         isPopulated(doctor) ? doctor.name : doctor
-  //       } is booked for ${populated?.date} at ${populated?.time}.`
-  //     );
-  //   } catch (err) {
-  //     console.error("Failed to send WhatsApp to patient:", err);
-  //   }
-  // }
 
   // Create notification for user
   await Notification.create({
@@ -99,7 +77,9 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
     type: "appointment",
     message: `Your appointment with Dr. ${
       isPopulated(doctor) ? doctor.name : doctor
-    } is booked for ${populated?.date} at ${populated?.time}.`,
+    } is booked for ${populated?.date} at ${
+      populated?.time
+    }. Please complete the payment to confirm.`,
     isRead: false,
     link: `/user/dashboard`,
   });
@@ -114,7 +94,6 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
 
 const getAppointments = catchAsync(async (req: Request, res: Response) => {
   const result = await AppointmentService.getAppointments(req.query);
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -126,7 +105,6 @@ const getAppointments = catchAsync(async (req: Request, res: Response) => {
 const getAppointment = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const result = await AppointmentService.getAppointment(id);
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -141,7 +119,6 @@ const getDoctorAppointments = catchAsync(
     const appointments = await AppointmentService.getAppointmentsByDoctor(
       doctor_id
     );
-
     sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -158,7 +135,6 @@ const getRegisteredDoctorAppointments = catchAsync(
       await AppointmentService.getAppointmentsByRegisteredDoctor(
         registered_doctor_id
       );
-
     sendResponse(res, {
       statusCode: 200,
       success: true,
@@ -176,7 +152,6 @@ const updateAppointment = catchAsync(async (req: Request, res: Response) => {
     req.params.id,
     body
   );
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -187,7 +162,6 @@ const updateAppointment = catchAsync(async (req: Request, res: Response) => {
 
 const deleteAppointment = catchAsync(async (req: Request, res: Response) => {
   const result = await AppointmentService.deleteAppointment(req.params.id);
-
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -210,10 +184,8 @@ const getEarnings = catchAsync(async (req, res) => {
 });
 
 const sendReminder = catchAsync(async (req: Request, res: Response) => {
-  console.log(req.params);
   const { id } = req.params;
   await AppointmentService.sendReminder(id);
-
   sendResponse(res, {
     statusCode: 200,
     success: true,
@@ -221,6 +193,45 @@ const sendReminder = catchAsync(async (req: Request, res: Response) => {
     data: null,
   });
 });
+
+// New controller method to update appointment status after payment
+
+const updateAppointmentStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!["confirmed", "cancelled"].includes(status)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Invalid status. Only 'confirmed' or 'cancelled' are allowed.",
+        data: null,
+      });
+    }
+
+    const result = await AppointmentService.updateAppointmentStatusAfterPayment(
+      id,
+      status
+    );
+
+    if (!result) {
+      return sendResponse(res, {
+        statusCode: httpStatus.NOT_FOUND,
+        success: false,
+        message: "Appointment not found",
+        data: null,
+      });
+    }
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: `Appointment status updated to ${status}`,
+      data: result,
+    });
+  }
+);
 
 export const AppointmentController = {
   createAppointment,
@@ -232,4 +243,5 @@ export const AppointmentController = {
   getRegisteredDoctorAppointments,
   getEarnings,
   sendReminder,
+  updateAppointmentStatus,
 };

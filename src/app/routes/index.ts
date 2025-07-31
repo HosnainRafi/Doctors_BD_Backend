@@ -12,6 +12,7 @@ import { UserRoutes } from "../../modules/user/user.routes";
 import { ReviewRoutes } from "../../modules/review/review.routes";
 import { NotificationRoutes } from "../../modules/notifications/notification.routes";
 import { MedexRoutes } from "../../modules/medex/medex.routes";
+import { TransactionRoutes } from "../../modules/transaction/transaction.routes";
 
 const router = Router();
 
@@ -67,6 +68,10 @@ const moduleRoutes = [
   {
     path: "/notifications",
     route: NotificationRoutes,
+  },
+  {
+    path: "/payment",
+    route: TransactionRoutes,
   },
 ];
 

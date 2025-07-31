@@ -15,7 +15,13 @@ const appointmentSchema = new Schema<AppointmentModel>(
     time: { type: String, required: true },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "cancelled", "completed"],
+      enum: [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "completed",
+        "pending_payment",
+      ],
       default: "pending",
     },
     amount: { type: number },
