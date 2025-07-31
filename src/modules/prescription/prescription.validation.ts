@@ -1,4 +1,15 @@
+// In prescription.validation.ts
+
 import { z } from "zod";
+
+// Alternative approach that avoids the type inference issue
+const objectIdSchemaAlt = z.preprocess((val) => {
+  if (typeof val === "string") return val;
+  if (val && typeof val === "object" && "_id" in val) {
+    return (val as any)._id;
+  }
+  return val;
+}, z.string().min(1));
 
 export const createPrescriptionValidation = z
   .object({
@@ -10,9 +21,8 @@ export const createPrescriptionValidation = z
     medicines: z.array(
       z.object({
         name: z.string().min(1),
-        dose: z.string().min(1),
-        timing: z.string().min(1), // <-- required
-        duration: z.string().min(1), // <-- required
+        timing: z.string().min(1),
+        duration: z.string().min(1),
         instructions: z.string().optional(),
       })
     ),
@@ -25,19 +35,21 @@ export const createPrescriptionValidation = z
   });
 
 export const updatePrescriptionValidation = z.object({
-  appointment_id: z.string().optional(),
-  doctor_id: z.string().optional(),
-  registered_doctor_id: z.string().optional(),
-  patient_id: z.string().optional(),
+  appointment_id: objectIdSchemaAlt.optional(),
+  doctor_id: objectIdSchemaAlt.optional(),
+  registered_doctor_id: objectIdSchemaAlt.optional(),
+  patient_id: objectIdSchemaAlt.optional(),
   date: z.string().optional(),
-  medicines: z.array(
-    z.object({
-      name: z.string().min(1),
-      timing: z.string().min(1), // <-- add this
-      duration: z.string().min(1), // <-- add this
-      instructions: z.string().optional(),
-    })
-  ),
+  medicines: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        timing: z.string().min(1),
+        duration: z.string().min(1),
+        instructions: z.string().optional(),
+      })
+    )
+    .optional(),
   advice: z.string().optional(),
   follow_up_date: z.string().optional(),
   pdf_url: z.string().optional(),
