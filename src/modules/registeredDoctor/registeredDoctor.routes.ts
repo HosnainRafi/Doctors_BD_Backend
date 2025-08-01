@@ -28,4 +28,9 @@ router.post(
   RegisteredDoctorController.loginDoctor
 );
 
+router.get(
+  "/earnings/:registered_doctor_id",
+  RegisteredDoctorController.getDetailedEarnings
+);
+
 export const RegisteredDoctorRoutes = router;

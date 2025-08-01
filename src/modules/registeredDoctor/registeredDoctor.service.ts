@@ -4,6 +4,7 @@ import {
   RegisteredDoctorModel,
 } from "./registeredDoctor.interface";
 import { FilterQuery } from "mongoose";
+import { Appointment } from "../appointment/appointment.model";
 
 export const RegisteredDoctorService = {
   async createDoctor(
@@ -48,5 +49,66 @@ export const RegisteredDoctorService = {
     const isMatch = await doctor.comparePassword(password);
     if (!isMatch) throw new Error("Invalid credentials");
     return doctor;
+  },
+
+  async getDetailedEarnings(registered_doctor_id: string) {
+    // Get all completed appointments for this doctor
+    const completedAppointments = await Appointment.find({
+      registered_doctor_id,
+      status: "completed",
+      amount: { $gt: 0 },
+    }).populate("patient_id");
+
+    // Calculate total earnings
+    const totalEarnings = completedAppointments.reduce(
+      (sum, appointment) => sum + (appointment.amount || 0),
+      0
+    );
+
+    // Group appointments by month for monthly earnings
+    const monthlyEarnings: { [key: string]: number } = {};
+
+    completedAppointments.forEach((appointment) => {
+      const date = new Date(appointment.createdAt);
+      const monthKey = `${date.getFullYear()}-${date.getMonth() + 1}`;
+      monthlyEarnings[monthKey] =
+        (monthlyEarnings[monthKey] || 0) + (appointment.amount || 0);
+    });
+
+    // Calculate average appointment fee
+    const averageFee =
+      completedAppointments.length > 0
+        ? totalEarnings / completedAppointments.length
+        : 0;
+
+    // Get current month's earnings
+    const currentDate = new Date();
+    const currentMonthKey = `${currentDate.getFullYear()}-${
+      currentDate.getMonth() + 1
+    }`;
+    const currentMonthEarnings = monthlyEarnings[currentMonthKey] || 0;
+
+    // Get today's earnings
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayEarnings = completedAppointments
+      .filter((appointment) => {
+        const appointmentDate = new Date(appointment.createdAt);
+        return appointmentDate >= today && appointmentDate < tomorrow;
+      })
+      .reduce((sum, appointment) => sum + (appointment.amount || 0), 0);
+
+    return {
+      totalEarnings,
+      currentMonthEarnings,
+      todayEarnings,
+      averageFee,
+      appointmentCount: completedAppointments.length,
+      monthlyBreakdown: monthlyEarnings,
+      appointments: completedAppointments,
+    };
   },
 };

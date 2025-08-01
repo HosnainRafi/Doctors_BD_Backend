@@ -131,6 +131,20 @@ const loginDoctor = catchAsync(async (req, res) => {
   });
 });
 
+const getDetailedEarnings = catchAsync(async (req: Request, res: Response) => {
+  const { registered_doctor_id } = req.params;
+  const earnings = await RegisteredDoctorService.getDetailedEarnings(
+    registered_doctor_id
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Detailed earnings retrieved successfully",
+    data: earnings,
+  });
+});
+
 export const RegisteredDoctorController = {
   createDoctor,
   getDoctors,
@@ -139,4 +153,5 @@ export const RegisteredDoctorController = {
   deleteDoctor,
   loginDoctor,
   getDoctorByEmail,
+  getDetailedEarnings,
 };

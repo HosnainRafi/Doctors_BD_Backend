@@ -2,6 +2,7 @@ import { Appointment } from "./appointment.model";
 import { IAppointment, AppointmentModel } from "./appointment.interface";
 import mongoose, { FilterQuery } from "mongoose";
 import { sendEmail } from "../../app/utils/sendEmail";
+import { RegisteredDoctor } from "../registeredDoctor/registeredDoctor.model";
 
 export const AppointmentService = {
   async createAppointment(payload: IAppointment): Promise<AppointmentModel> {
@@ -9,6 +10,26 @@ export const AppointmentService = {
     if (!payload.status) {
       payload.status = "pending_payment";
     }
+
+    // Get the doctor's consultation fee if it's a registered doctor
+    let amount = 500; // Default fallback amount
+
+    if (payload.registered_doctor_id) {
+      const doctor = await RegisteredDoctor.findById(
+        payload.registered_doctor_id
+      );
+      if (
+        doctor &&
+        doctor.consultation &&
+        doctor.consultation.follow_up_fee_discount_with_vat
+      ) {
+        amount = doctor.consultation.follow_up_fee_discount_with_vat;
+      }
+    }
+
+    // Set the amount in the payload
+    payload.amount = amount;
+
     return await Appointment.create(payload);
   },
 
