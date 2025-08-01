@@ -35,7 +35,6 @@ export const TransactionService = {
     if (!appointmentId) {
       throw new Error("Appointment ID is required");
     }
-
     let objectId;
     try {
       objectId = new mongoose.Types.ObjectId(appointmentId);
@@ -43,50 +42,33 @@ export const TransactionService = {
       throw new Error("Invalid appointment ID format");
     }
 
-    // Fetch appointment with populated doctor information
-    const appointment = await Appointment.findById(objectId)
-      .populate("patient_id")
-      .populate("registered_doctor_id")
-      .populate("doctor_id");
-
+    const appointment = await Appointment.findById(objectId).populate(
+      "patient_id"
+    );
     if (!appointment) {
       throw new Error("Appointment not found");
     }
-
-    if (appointment.status === "confirmed") {
+    if (
+      appointment.status === "confirmed" ||
+      appointment.status === "completed"
+    ) {
       throw new Error("Payment already completed for this appointment");
     }
 
-    // Get the doctor's consultation fee
-    let amount = 500; // Default fallback amount
+    // --- DYNAMIC AMOUNT ---
+    // Read the amount directly from the appointment document.
+    const amount = appointment.amount;
 
-    // Check if it's a registered doctor appointment
-    if (appointment.registered_doctor_id) {
-      const doctor = appointment.registered_doctor_id as any;
-      if (
-        doctor.consultation &&
-        doctor.consultation.follow_up_fee_discount_with_vat
-      ) {
-        amount = doctor.consultation.follow_up_fee_discount_with_vat;
-      }
+    if (!amount || amount <= 0) {
+      throw new Error(
+        "Invalid or zero amount for appointment. Cannot initiate payment."
+      );
     }
-    // If it's a directory doctor, you might want to implement similar logic
-    else if (appointment.doctor_id) {
-      // For directory doctors, you might have a different fee structure
-      // For now, we'll keep the default amount
-      console.log("Using default amount for directory doctor");
-    }
+    // --- END DYNAMIC AMOUNT ---
 
-    // Update the appointment with the amount
-    await Appointment.findByIdAndUpdate(objectId, { amount });
-
-    // Create a unique transaction ID
     const transactionId = `${objectId.toString()}-${Date.now()}`;
-
-    // Get patient information
     const patientInfo = getPatientInfo(appointment.patient_id);
 
-    // Prepare payment data for SSLCommerz
     const data = {
       total_amount: amount,
       currency: "BDT",
@@ -115,11 +97,15 @@ export const TransactionService = {
       ship_state: "N/A",
       ship_postcode: "N/A",
       ship_country: "Bangladesh",
+      // SSLCommerz allows custom fields. Using value_a to hold the appointmentId
+      // is a good way to pass data that you can receive back in the IPN.
       value_a: appointmentId,
     };
 
+    // REFACTORED: Removed the `new Promise` anti-pattern for cleaner async/await.
     try {
       const SSLCommerzPayment = require("sslcommerz-lts");
+
       if (!SSLCommerzPayment || typeof SSLCommerzPayment !== "function") {
         throw new Error(
           "Failed to load the SSLCommerzPayment library correctly."
@@ -132,9 +118,10 @@ export const TransactionService = {
         SSLCommerzConfig.is_live
       );
 
+      // The rest of the logic can now use the `new Promise` wrapper, or the refactored async/await version from my previous answer.
+      // Using the cleaner async/await version:
       const apiResponse = await sslcz.init(data);
 
-      // Create transaction record
       await Transaction.create({
         appointment_id: objectId,
         amount,
@@ -145,7 +132,6 @@ export const TransactionService = {
       return {
         GatewayPageURL: apiResponse.GatewayPageURL,
         transactionId,
-        amount, // Include amount in the response
       };
     } catch (error: any) {
       console.error("SSLCommerz initialization error:", error);

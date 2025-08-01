@@ -14,7 +14,7 @@ const createAppointment = catchAsync(async (req: Request, res: Response) => {
   );
 
   // Set status to pending_payment for new appointments
-  body.status = "pending_payment";
+  //body.status = "pending_payment";
 
   const result = await AppointmentService.createAppointment(body);
 

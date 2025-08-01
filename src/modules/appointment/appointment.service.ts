@@ -6,30 +6,94 @@ import { RegisteredDoctor } from "../registeredDoctor/registeredDoctor.model";
 
 export const AppointmentService = {
   async createAppointment(payload: IAppointment): Promise<AppointmentModel> {
-    // Set status to pending_payment if not provided
-    if (!payload.status) {
-      payload.status = "pending_payment";
+    // Ensure we are booking for a registered doctor with a profile
+    if (!payload.registered_doctor_id) {
+      throw new Error(
+        "Registered Doctor ID is required to book a paid appointment."
+      );
     }
 
-    // Get the doctor's consultation fee if it's a registered doctor
-    let amount = 500; // Default fallback amount
+    // Fetch the doctor's details to get consultation fees
+    const doctor = await RegisteredDoctor.findById(
+      payload.registered_doctor_id
+    );
+    if (!doctor || !doctor.consultation) {
+      throw new Error("Doctor's consultation details not found.");
+    }
 
-    if (payload.registered_doctor_id) {
-      const doctor = await RegisteredDoctor.findById(
-        payload.registered_doctor_id
+    const consultation = doctor.consultation;
+    let isFollowUp = false;
+    let fee = 0;
+
+    // --- Fee Calculation Logic ---
+
+    // 1. Determine if it's a follow-up appointment
+    if (
+      consultation.follow_up_within_day &&
+      consultation.follow_up_within_day > 0
+    ) {
+      const followUpCutoffDate = new Date();
+      followUpCutoffDate.setDate(
+        followUpCutoffDate.getDate() - consultation.follow_up_within_day
       );
-      if (
-        doctor &&
-        doctor.consultation &&
-        doctor.consultation.follow_up_fee_discount_with_vat
-      ) {
-        amount = doctor.consultation.follow_up_fee_discount_with_vat;
+
+      const lastAppointment = await Appointment.findOne({
+        registered_doctor_id: payload.registered_doctor_id,
+        patient_id: payload.patient_id,
+        status: "completed",
+        createdAt: { $gte: followUpCutoffDate },
+      });
+
+      if (lastAppointment) {
+        isFollowUp = true;
       }
     }
 
-    // Set the amount in the payload
-    payload.amount = amount;
+    // 2. Calculate the fee based on appointment type and discounts
+    const now = new Date();
 
+    if (isFollowUp) {
+      const discountExpires = consultation.follow_up_fee_discount_expire
+        ? new Date(consultation.follow_up_fee_discount_expire)
+        : null;
+
+      if (
+        consultation.follow_up_fee_discount_with_vat &&
+        discountExpires &&
+        discountExpires > now
+      ) {
+        fee = consultation.follow_up_fee_discount_with_vat;
+      } else {
+        fee = consultation.follow_up_fee_with_vat || 0;
+      }
+    } else {
+      // It's a standard (new) appointment
+      const discountExpires = consultation.standard_fee_discount_expire
+        ? new Date(consultation.standard_fee_discount_expire)
+        : null;
+
+      if (
+        consultation.standard_fee_discount_with_vat &&
+        discountExpires &&
+        discountExpires > now
+      ) {
+        fee = consultation.standard_fee_discount_with_vat;
+      } else {
+        fee = consultation.standard_fee_with_vat || 0;
+      }
+    }
+
+    if (fee <= 0) {
+      throw new Error(
+        "Could not determine a valid consultation fee for the doctor."
+      );
+    }
+
+    // Set the calculated amount and status on the payload
+    payload.amount = fee;
+    payload.status = "pending_payment";
+
+    // Create the appointment with the dynamic data
     return await Appointment.create(payload);
   },
 
@@ -81,15 +145,23 @@ export const AppointmentService = {
     return Appointment.findByIdAndDelete(id);
   },
 
-  // appointment.service.ts
   async getEarningsByDoctor(registered_doctor_id: string) {
-    const completed = await Appointment.find({
+    const completedAppointments = await Appointment.find({
       registered_doctor_id,
       status: "completed",
       amount: { $gt: 0 },
     });
-    const total = completed.reduce((sum, a) => sum + (a.amount || 0), 0);
-    return { total, count: completed.length, appointments: completed };
+
+    const totalEarnings = completedAppointments.reduce(
+      (sum, appointment) => sum + (appointment.amount || 0),
+      0
+    );
+
+    return {
+      total: totalEarnings,
+      count: completedAppointments.length,
+      appointments: completedAppointments,
+    };
   },
 
   async sendReminder(appointmentId: string) {
