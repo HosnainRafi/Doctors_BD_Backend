@@ -7,9 +7,12 @@ import axios from "axios";
 
 const validateTransaction = async (val_id: string) => {
   try {
+    const baseUrl = SSLCommerzConfig.is_live
+      ? "https://secure.sslcommerz.com" // Live URL
+      : "https://sandbox.sslcommerz.com"; // Sandbox URL
     const store_id = SSLCommerzConfig.store_id;
     const store_passwd = SSLCommerzConfig.store_password;
-    const validateUrl = `https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php?val_id=${val_id}&store_id=${store_id}&store_passwd=${store_passwd}&v=1&format=json`;
+    const validateUrl = `${baseUrl}/validator/api/validationserverAPI.php?val_id=${val_id}&store_id=${store_id}&store_passwd=${store_passwd}&v=1&format=json`;
 
     const response = await axios.get(validateUrl);
     return response.data;
@@ -43,9 +46,12 @@ const paymentSuccess = catchAsync(async (req: Request, res: Response) => {
     console.log("Validating transaction with SSLCommerz...");
     const validationData = await validateTransaction(val_id as string);
     console.log("SSLCommerz validation response:", validationData);
-
+    console.log(
+      "Full validation response from SSLCommerz:",
+      JSON.stringify(validationData, null, 2)
+    );
     // Check if validation was successful
-    if (validationData.status !== "VALID") {
+    if (validationData?.status !== "VALIDATED") {
       console.error("Transaction validation failed:", validationData);
       return res.redirect(
         `${SSLCommerzConfig.frontend_fail_url}?tran_id=${tran_id}&status=validation&reason=${validationData.error}`

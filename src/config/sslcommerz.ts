@@ -2,8 +2,8 @@
 import config from "../app/config";
 
 export const SSLCommerzConfig = {
-  store_id: config.store_id || "testbox",
-  store_password: config.store_pass || "testbox",
+  store_id: config.store_id || "docto688b2dcbe56ed",
+  store_password: config.store_pass || "docto688b2dcbe56ed@ssl",
   is_live: config.ssl_is_live === "true",
 
   // Backend URLs (for SSLCommerz callbacks)
