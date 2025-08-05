@@ -39,6 +39,8 @@ export interface IRegisteredDoctor {
   phone: string;
   password: string;
   bmdc_number?: string;
+  district?: string; // <-- Add district
+  gender?: "Male" | "Female" | "Other";
   specialty?: string;
   specialties?: string[]; // e.g. ["Cardiology", "General Physician"]
   degree_names?: string[]; // e.g. ["MBBS", "FCPS"]
@@ -52,6 +54,7 @@ export interface IRegisteredDoctor {
   schedules?: ISchedule[];
   consultation?: IConsultation;
   experiences?: IExperience[];
+  total_experience_years?: number;
   no_of_patients_served?: number;
   review?: {
     average_rating: number;

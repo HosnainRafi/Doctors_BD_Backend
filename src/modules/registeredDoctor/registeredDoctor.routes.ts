@@ -12,6 +12,7 @@ router.post(
 );
 
 router.get("/", RegisteredDoctorController.getDoctors);
+router.get("/search", RegisteredDoctorController.searchDoctors);
 router.get("/by-email", RegisteredDoctorController.getDoctorByEmail);
 router.get("/:id", RegisteredDoctorController.getDoctor);
 

@@ -5,6 +5,15 @@ import {
 } from "./registeredDoctor.interface";
 import { FilterQuery } from "mongoose";
 import { Appointment } from "../appointment/appointment.model";
+type TDoctorSearchQuery = {
+  specialty?: string;
+  gender?: string;
+  district?: string;
+  hospital?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minExp?: string;
+};
 
 export const RegisteredDoctorService = {
   async createDoctor(
@@ -110,5 +119,56 @@ export const RegisteredDoctorService = {
       monthlyBreakdown: monthlyEarnings,
       appointments: completedAppointments,
     };
+  },
+
+  async searchDoctors(
+    queryParams: TDoctorSearchQuery
+  ): Promise<RegisteredDoctorModel[]> {
+    const {
+      specialty,
+      gender,
+      district,
+      hospital,
+      minPrice,
+      maxPrice,
+      minExp,
+    } = queryParams;
+
+    const filters: FilterQuery<IRegisteredDoctor> = { isVerified: true }; // Only show verified doctors
+
+    if (specialty) {
+      // Find where the 'specialty' string is an element in the 'specialties' array
+      filters.specialties = specialty;
+    }
+    if (gender) {
+      filters.gender = gender;
+    }
+    if (district) {
+      filters.district = district;
+    }
+    if (minExp) {
+      filters.total_experience_years = { $gte: Number(minExp) };
+    }
+
+    // Handle price range in the nested consultation object
+    if (minPrice || maxPrice) {
+      filters["consultation.standard_fee"] = {};
+      if (minPrice) {
+        filters["consultation.standard_fee"].$gte = Number(minPrice);
+      }
+      if (maxPrice) {
+        filters["consultation.standard_fee"].$lte = Number(maxPrice);
+      }
+    }
+
+    // Handle hospital name in the nested experiences array
+    if (hospital) {
+      // Find doctors where at least one of their experiences matches the hospital name
+      filters.experiences = {
+        $elemMatch: { organization_name: { $regex: hospital, $options: "i" } },
+      };
+    }
+
+    return await RegisteredDoctor.find(filters);
   },
 };

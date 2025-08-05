@@ -1,6 +1,9 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt";
-import { RegisteredDoctorModel } from "./registeredDoctor.interface";
+import {
+  IExperience,
+  RegisteredDoctorModel,
+} from "./registeredDoctor.interface";
 
 const scheduleSchema = new Schema(
   {
@@ -12,7 +15,7 @@ const scheduleSchema = new Schema(
   { _id: false }
 );
 
-const experienceSchema = new Schema(
+const experienceSchema = new Schema<IExperience>(
   {
     organization_name: String,
     designation: String,
@@ -51,6 +54,8 @@ const registeredDoctorSchema = new Schema<RegisteredDoctorModel>(
     phone: { type: String, required: true, trim: true },
     password: { type: String },
     bmdc_number: { type: String },
+    district: { type: String, trim: true }, // <-- Add district
+    gender: { type: String, enum: ["Male", "Female", "Other"] }, // <-- Add gender
     specialty: { type: String },
     specialties: [String],
     degree_names: [String],
@@ -73,7 +78,11 @@ const registeredDoctorSchema = new Schema<RegisteredDoctorModel>(
     ],
     schedules: [scheduleSchema],
     consultation: consultationSchema,
-    experiences: [experienceSchema],
+    experiences: {
+      type: [experienceSchema],
+      default: [], // <-- FIX #1: Ensure 'experiences' is always an array.
+    },
+    total_experience_years: { type: Number, default: 0 },
     no_of_patients_served: { type: Number, default: 0 },
     review: {
       average_rating: Number,
@@ -84,8 +93,41 @@ const registeredDoctorSchema = new Schema<RegisteredDoctorModel>(
   { timestamps: true, versionKey: false }
 );
 
+registeredDoctorSchema.pre("save", function (next) {
+  // Check if experiences field is modified and exists
+  if (this.isModified("experiences") && this.experiences) {
+    const totalMonths = this.experiences.reduce((acc, exp) => {
+      // FIX #2: Refactored logic for better type safety and clarity
+      if (exp.from) {
+        let endDate: Date;
+        if (exp.is_current) {
+          endDate = new Date(); // It's a current job
+        } else if (exp.to) {
+          // This 'else if' guarantees exp.to is a string here
+          endDate = new Date(exp.to);
+        } else {
+          // No end date and not current, so can't calculate duration
+          return acc + (exp.duration_month || 0);
+        }
+
+        const startDate = new Date(exp.from);
+        // Add a check for valid dates to prevent NaN
+        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+          const duration =
+            (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+            (endDate.getMonth() - startDate.getMonth());
+          return acc + Math.max(0, duration); // Ensure duration isn't negative
+        }
+      }
+      return acc + (exp.duration_month || 0);
+    }, 0);
+    this.total_experience_years = Math.floor(totalMonths / 12);
+  }
+  next();
+});
+
 registeredDoctorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
