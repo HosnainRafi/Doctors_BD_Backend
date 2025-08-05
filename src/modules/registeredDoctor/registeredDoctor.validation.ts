@@ -7,6 +7,8 @@ export const createRegisteredDoctorValidation = z.object({
   password: z.string().min(6),
   bmdc_number: z.string().optional(),
   specialty: z.string().optional(),
+  gender: z.enum(["Male", "Female", "Other"]).optional(),
+  district: z.string().optional(),
   specialties: z.array(z.string()).optional(),
   degree_names: z.array(z.string()).optional(),
   additional_qualifications: z.array(z.string()).optional(),
