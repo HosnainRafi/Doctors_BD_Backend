@@ -1,9 +1,7 @@
 import { z } from "zod";
 
 export const createSpecialtyCategoryValidation = z.object({
-  body: z.object({
-    name: z.string().min(2),
-  }),
+  name: z.string().min(2),
 });
 
 export const updateSpecialtyCategoryValidation = z.object({

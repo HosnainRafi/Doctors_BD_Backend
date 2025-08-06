@@ -7,15 +7,10 @@ export const validateRequest = (schema: ZodSchema<any>) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
-      res.status(400).json({
-        success: false,
-        message: "Validation failed",
-        error: result.error.format(),
-      });
-      return; // prevent further execution
+      // Pass the ZodError to the global error handler
+      return next(result.error);
     }
 
-    // Optional: replace req.body with parsed data for safety
     req.body = result.data;
     next();
   };

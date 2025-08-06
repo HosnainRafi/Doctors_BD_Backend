@@ -5,8 +5,10 @@ import { SpecialtyCategoryService } from "./specialtyCategory.service";
 import { SpecialtyCategoryValidations } from "./specialtyCategory.validation";
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const { body } =
-    SpecialtyCategoryValidations.createSpecialtyCategoryValidation.parse(req);
+  const body =
+    SpecialtyCategoryValidations.createSpecialtyCategoryValidation.parse(
+      req.body
+    );
   const result = await SpecialtyCategoryService.create(body);
   sendResponse(res, {
     statusCode: 201,
